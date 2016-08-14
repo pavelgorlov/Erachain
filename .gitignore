@@ -1,5 +1,7 @@
-﻿*.class
+*.class
 
 ERM/settings.json
 ERM/*.jar
 *.jar
+.idea
+ERM/target
