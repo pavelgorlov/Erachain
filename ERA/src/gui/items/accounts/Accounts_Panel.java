@@ -25,9 +25,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
 
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -40,6 +42,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
+import controller.Controller;
 import utils.BigDecimalStringComparator;
 import utils.NumberAsString;
 import utils.TableMenuPopupUtil;
@@ -49,7 +52,9 @@ import core.crypto.Base32;
 import core.item.assets.AssetCls;
 import core.item.persons.PersonCls;
 import core.transaction.Transaction;
+import core.wallet.Wallet;
 import gui.Gui;
+import gui.PasswordPane;
 @SuppressWarnings("serial")
 public class Accounts_Panel extends JPanel // implements ItemListener
 
@@ -60,6 +65,7 @@ public class Accounts_Panel extends JPanel // implements ItemListener
 
 	public JComboBox<AssetCls> cbxFavorites;
 	public AccountsTableModel tableModel;
+	public JButton newAccount_Button;
 	MTable table;
 
 	@SuppressWarnings("unchecked")
@@ -76,8 +82,9 @@ public class Accounts_Panel extends JPanel // implements ItemListener
 		GridBagConstraints tableGBC = new GridBagConstraints();
 		tableGBC.fill = GridBagConstraints.BOTH; 
 		tableGBC.anchor = GridBagConstraints.NORTHWEST;
-		tableGBC.weightx = 1;
-		tableGBC.weighty = 1;
+		tableGBC.gridwidth =2;
+		tableGBC.weightx = 1.0;
+		tableGBC.weighty = 0.1;
 		tableGBC.gridx = 1;	
 		tableGBC.gridy= 1;	
 		
@@ -94,13 +101,49 @@ public class Accounts_Panel extends JPanel // implements ItemListener
 		favoritesGBC.insets = new Insets(10, 0, 10, 0);
 		favoritesGBC.fill = GridBagConstraints.BOTH;  
 		favoritesGBC.anchor = GridBagConstraints.NORTHWEST;
-		favoritesGBC.weightx = 1;
+		favoritesGBC.weightx = 0.8;
 		favoritesGBC.gridx = 1;	
 		favoritesGBC.gridy = 0;	
 		
 		//ASSET FAVORITES
 		cbxFavorites = new JComboBox<AssetCls>(new AssetsComboBoxModel());
 		this.add(cbxFavorites, favoritesGBC);
+		
+		
+		favoritesGBC.insets = new Insets(10, 10, 10, 0);
+		favoritesGBC.fill = GridBagConstraints.BOTH;  
+		favoritesGBC.anchor = GridBagConstraints.NORTHWEST;
+		favoritesGBC.weightx = 0.2;
+		favoritesGBC.gridx = 2;	
+		favoritesGBC.gridy = 0;	
+		
+		
+		newAccount_Button = new JButton(Lang.getInstance().translate("New Account"));
+		this.add(newAccount_Button, favoritesGBC);
+		newAccount_Button.addActionListener(new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				// TODO Auto-generated method stub
+				  //CHECK IF WALLET UNLOCKED
+				  if(!Controller.getInstance().isWalletUnlocked())
+				  {
+				   //ASK FOR PASSWORD
+				   String password = PasswordPane.showUnlockWalletDialog(); 
+				   if(!Controller.getInstance().unlockWallet(password))
+				   {
+				    //WRONG PASSWORD
+				    JOptionPane.showMessageDialog(null, Lang.getInstance().translate("Invalid password"), Lang.getInstance().translate("Unlock Wallet"), JOptionPane.ERROR_MESSAGE);
+				    return;
+				   }
+				  }
+				  
+				  //GENERATE NEW ACCOUNT
+				  Controller.getInstance().generateNewAccount();
+				 }
+			
+			
+		});
 		
 		//TABLE
 		tableModel = new AccountsTableModel();

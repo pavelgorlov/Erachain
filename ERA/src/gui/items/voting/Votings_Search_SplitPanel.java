@@ -19,6 +19,7 @@ public class Votings_Search_SplitPanel extends Split_Panel {
 	VotingDetailPanel votingDetailsPanel;
 
 	public Votings_Search_SplitPanel() {
+		super("Votings_Search_SplitPanel");
 		this.leftPanel.setVisible(false);
 		allVotingsPanel = new All_Votings_Panel();
 		this.jSplitPanel.setLeftComponent(allVotingsPanel);
@@ -66,4 +67,15 @@ public class Votings_Search_SplitPanel extends Split_Panel {
 		new Voting_Dialog(voting, 0, (AssetCls) allVotingsPanel.cbxAssets.getSelectedItem());
 	}
 
+	@Override
+	public void delay_on_close(){
+		// delete observer left panel
+		allVotingsPanel.pollsTableModel.removeObservers();
+		// get component from right panel
+	//	Component c1 = jScrollPane_jPanel_RightPanel.getViewport().getView();
+		// if Person_Info 002 delay on close
+		//  if (c1 instanceof Statement_Info) ( (Statement_Info)c1).delay_on_Close();
+		
+	}
+	
 }

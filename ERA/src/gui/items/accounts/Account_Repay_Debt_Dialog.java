@@ -39,7 +39,6 @@ import gui.Send_Panel;
 //import gui.items.persons.MyPersonsPanel;
 //import gui.items.persons.PersonFrame;
 import javax.swing.JTextField;
-import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.BoxLayout;
 
@@ -90,9 +89,7 @@ public class Account_Repay_Debt_Dialog extends JDialog{
 		
     //    this.setResizable(false);
         this.setLocationRelativeTo(null);
-		
-  //      this.setResizable(true);
-//        splitPane_1.setDividerLocation((int)((double)(this.getHeight())*0.7));//.setDividerLocation(.8);
+
         this.setVisible(true);
 	
 	}

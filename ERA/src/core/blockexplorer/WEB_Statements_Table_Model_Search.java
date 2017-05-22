@@ -1,6 +1,7 @@
 package core.blockexplorer;
 
 import java.nio.charset.Charset;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
@@ -16,6 +18,9 @@ import javax.swing.table.AbstractTableModel;
 import javax.validation.constraints.Null;
 
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.mapdb.Fun.Tuple3;
 import org.mapdb.Fun.Tuple5;
 
 import controller.Controller;
@@ -244,14 +249,38 @@ public class WEB_Statements_Table_Model_Search extends AbstractTableModel implem
 		*/
 
 			case COLUMN_NOTE:
-				
-				return ItemCls.getItem(DBSet.getInstance(), ItemCls.NOTE_TYPE, record.getKey()).toString();
+				ItemCls it = ItemCls.getItem(DBSet.getInstance(), ItemCls.NOTE_TYPE, record.getKey());
+				if (it == null) return "";
+				return it.toString();
 				
 			case COLUMN_BODY:				
 				
-				 String str = new String( record.getData() , Charset.forName("UTF-8") );
-				if (str.length()>50) return str.substring(0,50)+"...";
-				return str ;//transaction.viewReference();//.viewProperies();
+				if(record.getVersion() == 2){
+					Tuple3<String, String, JSONObject> a = record.parse_Data_V2_Without_Files();
+					return a.b;
+				}
+				 
+				String str = "";
+				 try {
+					JSONObject data = (JSONObject) JSONValue.parseWithException(new String(record.getData(), Charset.forName("UTF-8")));
+					str =  (String) data.get("!!&_Title");
+					if (str == null) str = (String) data.get("Title");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+				
+					
+					 str = new String( record.getData() , Charset.forName("UTF-8") );
+				}	
+				 if (str == null) return "??";
+				 if (str.length()>50) return str.substring(0,50)+"...";
+					return str ;//transaction.viewReference();//.viewProperies();
+				
+				
+				
+				
+				
+				
+			
 				
 				
 	//		case COLUMN_AMOUNT:

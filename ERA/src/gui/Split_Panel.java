@@ -7,8 +7,10 @@ package gui;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -19,8 +21,13 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.TableModel;
 
+import org.json.simple.JSONObject;
+
+import gui.library.MSplitPane;
 import gui.library.MTable;
 import lang.Lang;
+import settings.Settings;
+
 
 /**
  *
@@ -32,24 +39,17 @@ public class Split_Panel extends javax.swing.JPanel {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	private int spt;
+	private JSONObject settingsJSONbuf;
 	/**
      * Creates new form Doma2
      */
-    public Split_Panel() {
+	
+    public Split_Panel(String str) {
+    	super();
+    
         initComponents();
-
-
-       this.jTable_jScrollPanel_LeftPanel.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-    //    this.jTable_jScrollPanel_LeftPanel.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);	
-       searchToolBar_LeftPanel.setVisible(false); 
-        
-     
-     		
-        
-        
-        
-        
-      
+        set_Divider_Parameters(str);
     }
   
     /**
@@ -60,9 +60,15 @@ public class Split_Panel extends javax.swing.JPanel {
     
     // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
+    	
+    	spt = 0;
+    	settingsJSONbuf = new JSONObject();
+		settingsJSONbuf = Settings.getInstance().Dump();
+    	
         java.awt.GridBagConstraints gridBagConstraints;
 
-        jSplitPanel = new javax.swing.JSplitPane();
+        jSplitPanel = new MSplitPane(MSplitPane.VERTICAL_SPLIT, true);
+  //      jSplitPanel.M_setDividerSize(20);
         leftPanel = new javax.swing.JPanel();
         toolBar_LeftPanel = new javax.swing.JToolBar();
         button1_ToolBar_LeftPanel = new javax.swing.JButton();
@@ -123,6 +129,7 @@ public class Split_Panel extends javax.swing.JPanel {
 
         searchToolBar_LeftPanel.setFloatable(false);
         searchToolBar_LeftPanel.setRollover(true);
+        searchToolBar_LeftPanel.setVisible(false); 
         
         
         searth_My_JCheckBox_LeftPanel = new JCheckBox();
@@ -180,7 +187,8 @@ public class Split_Panel extends javax.swing.JPanel {
         gridBagConstraints.weighty = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(1, 8, 8, 8);
         leftPanel.add(jScrollPanel_LeftPanel, gridBagConstraints);
-
+        jScrollPanel_LeftPanel.setMinimumSize(new Dimension(0,0));
+        leftPanel.setMinimumSize(new Dimension(0,0));
         jSplitPanel.setLeftComponent(leftPanel);
 
         rightPanel1.setMinimumSize(new java.awt.Dimension(150, 0));
@@ -283,10 +291,14 @@ public class Split_Panel extends javax.swing.JPanel {
         
         
         
-        
-
+        jScrollPane_jPanel_RightPanel.setMinimumSize(new Dimension(0,0));
+        jScrollPane_jPanel_RightPanel.setPreferredSize(new Dimension(350,350));
+        rightPanel1.setMinimumSize(new Dimension(0,0));
+        rightPanel1.setPreferredSize(new Dimension(350,350));
         jSplitPanel.setRightComponent(rightPanel1);
-
+        
+        
+        
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -297,6 +309,13 @@ public class Split_Panel extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jSplitPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 274, Short.MAX_VALUE)
         );
+        
+        jSplitPanel.setDividerLocation(0.3);
+        
+        this.jTable_jScrollPanel_LeftPanel.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        //    this.jTable_jScrollPanel_LeftPanel.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);	
+           
+      
     }// </editor-fold>                        
 
     private void button1_ToolBar_LeftPanelActionPerformed(java.awt.event.ActionEvent evt) {                                                          
@@ -304,6 +323,31 @@ public class Split_Panel extends javax.swing.JPanel {
     }                                                         
 
 
+    private void set_Divider_Parameters(String str){
+    	settingsJSONbuf = Settings.getInstance().read_setting_JSON();
+    	JSONObject params;
+		if (!settingsJSONbuf.containsKey("Main_Frame_Setting")) return;
+    	 params = (JSONObject) settingsJSONbuf.get("Main_Frame_Setting");
+    	if (!params.containsKey(str)) return;
+    	Object sss = params.get(str);
+    	 JSONObject param = (JSONObject) params.get(str);
+    	if (param.containsKey("Div_Last_Loc")) jSplitPanel.setLastDividerLocation(new Integer((String) param.get("Div_Last_Loc")));
+    	if (param.containsKey("Div_Loc")) jSplitPanel.setDividerLocation(new Integer((String)param.get("Div_Loc")));
+    	int ii = new Integer((String)param.get("Div_Orientation"));
+    	if (param.containsKey("Div_Orientation"))jSplitPanel.setOrientation(ii);
+    	jSplitPanel.set_button_title();
+    	 
+    }
+    
+    
+    public void delay_on_close(){
+    	
+    	
+    	
+    	
+    	
+    }
+    
     // Variables declaration - do not modify                     
     public javax.swing.JButton button1_ToolBar_LeftPanel;
     public javax.swing.JButton button2_ToolBar_LeftPanel;
@@ -313,7 +357,7 @@ public class Split_Panel extends javax.swing.JPanel {
     public javax.swing.JPanel jPanel_RightPanel;
     public javax.swing.JScrollPane jScrollPane_jPanel_RightPanel;
     public javax.swing.JScrollPane jScrollPanel_LeftPanel;
-    public javax.swing.JSplitPane jSplitPanel;
+    public MSplitPane jSplitPanel;
     public MTable jTable_jScrollPanel_LeftPanel;
     public javax.swing.JToolBar jToolBar_RightPanel;
     public javax.swing.JPanel leftPanel;

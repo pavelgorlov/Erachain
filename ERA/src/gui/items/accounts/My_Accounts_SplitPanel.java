@@ -1,6 +1,8 @@
 package gui.items.accounts;
 
 import java.awt.GridBagConstraints;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -15,7 +17,10 @@ public class My_Accounts_SplitPanel extends Split_Panel {
 	
 	public Accounts_Panel accountPanel;
 	public Accounts_Right_Panel rightPanel;
+	private int spt=1;
+	
 	public My_Accounts_SplitPanel(){
+		super("My_Accounts_SplitPanel");
 		
 	//	LayoutManager favoritesGBC = this.getLayout();
 		this.jScrollPanel_LeftPanel.setVisible(false);
@@ -38,11 +43,14 @@ public class My_Accounts_SplitPanel extends Split_Panel {
 		this.leftPanel.add( accountPanel, PanelGBC);
 		//this.rightPanel1.add(rightPanel,PanelGBC);
 		jScrollPane_jPanel_RightPanel.setViewportView(rightPanel);
+	//	 this.jSplitPanel.setDividerLocation(0.3);
 		
 		// EVENTS on CURSOR
 		accountPanel.table.getSelectionModel().addListSelectionListener(new Account_Tab_Listener());
 		
 		
+		
+		this.repaint();
 	
 	}
 	

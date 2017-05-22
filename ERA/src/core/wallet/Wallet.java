@@ -78,7 +78,7 @@ public class Wallet extends Observable implements Observer
 	
 	private static final long RIGHTS_KEY = Transaction.RIGHTS_KEY;
 	private static final long FEE_KEY = Transaction.FEE_KEY;
-	private WalletDatabase database;
+	public WalletDatabase database;
 	private SecureWalletDatabase secureDatabase;
 	
 	private int secondsToUnlock = -1;
@@ -247,7 +247,7 @@ public class Wallet extends Observable implements Observer
 		return this.database.getTransactionMap().get(account, limit);
 	}
 	
-	public List<Pair<Account, Block>> getLastBlocks()
+	public List<Pair<Account, Block>> getLastBlocks(int limit)
 	{
 		if(!this.exists())
 		{
@@ -255,17 +255,17 @@ public class Wallet extends Observable implements Observer
 		}
 
 		List<Account> accounts = this.getAccounts();
-		return this.database.getBlockMap().get(accounts);
+		return this.database.getBlockMap().get(accounts, limit);
 	}
 
-	public List<Block> getLastBlocks(Account account)
+	public List<Block> getLastBlocks(Account account, int limit)
 	{
 		if(!this.exists())
 		{
 			return new ArrayList<Block>();
 		}
 
-		return this.database.getBlockMap().get(account);
+		return this.database.getBlockMap().get(account, limit);
 	}
 		
 	public List<Pair<Account, Name>> getNames()
@@ -2052,7 +2052,7 @@ public class Wallet extends Observable implements Observer
 	
 	public long getLicenseKey()
 	{
-		if (this.database == null) {
+		if (this.database == null || this.database.getAccountMap().getLicenseKey() == null) {
 			return 2l;
 		}
 		

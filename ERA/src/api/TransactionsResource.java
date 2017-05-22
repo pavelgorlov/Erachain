@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.mapdb.Fun.Tuple2;
 
 import controller.Controller;
 import core.account.Account;
@@ -182,6 +183,7 @@ public class TransactionsResource {
 		
 		for(Transaction transaction: transactions)
 		{
+			//JSONArray peersList = new JSONArray<List<byte[]>>(transaction.a);
 			array.add(transaction.toJson());
 		}
 		

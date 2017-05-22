@@ -13,8 +13,7 @@
 	import controller.Controller;
 import core.item.assets.AssetCls;
 import core.voting.Poll;
-import gui.MainFrame;
-	import gui.Split_Panel;
+import gui.Split_Panel;
 import gui.library.MTable;
 	import gui.models.WalletItemPersonsTableModel;
 import gui.models.WalletPollsTableModel;
@@ -34,7 +33,7 @@ import lang.Lang;
 		
 		
 	public Votings_My_SplitPanel(){
-	
+	super("Votings_My_SplitPanel");
 		this.setName(Lang.getInstance().translate("My Votings"));
 			this.searthLabel_SearchToolBar_LeftPanel.setText(Lang.getInstance().translate("Search") +":  ");
 			// not show buttons
@@ -66,9 +65,9 @@ import lang.Lang;
 			this.jScrollPanel_LeftPanel.setViewportView(this.jTable_jScrollPanel_LeftPanel);		
 			// EVENTS on CURSOR
 			my_Voting_table.getSelectionModel().addListSelectionListener(new My_Tab_Listener());
-			 Dimension size = MainFrame.getInstance().desktopPane.getSize();
-			 this.setSize(new Dimension((int)size.getWidth()-100,(int)size.getHeight()-100));
-			 jSplitPanel.setDividerLocation((int)(size.getWidth()/1.618));
+	//		 Dimension size = MainFrame.getInstance().desktopPane.getSize();
+	//		 this.setSize(new Dimension((int)size.getWidth()-100,(int)size.getHeight()-100));
+	//		 jSplitPanel.setDividerLocation((int)(size.getWidth()/1.618));
 		}
 
 		class My_Tab_Listener implements ListSelectionListener {
@@ -110,6 +109,16 @@ import lang.Lang;
 			}
 		}
 		
+		@Override
+		public void delay_on_close(){
+			// delete observer left panel
+			my_Voting_Model.removeObservers();
+			// get component from right panel
+		//	Component c1 = jScrollPane_jPanel_RightPanel.getViewport().getView();
+			// if Person_Info 002 delay on close
+			//  if (c1 instanceof Statement_Info) ( (Statement_Info)c1).delay_on_Close();
+			
+		}
 		
 	
 	}

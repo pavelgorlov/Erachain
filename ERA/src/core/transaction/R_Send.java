@@ -1,15 +1,26 @@
 package core.transaction;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.mapdb.Fun.Tuple2;
+import org.mapdb.Fun.Tuple3;
+import org.mapdb.Fun.Tuple4;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
@@ -23,15 +34,39 @@ import database.ItemAssetBalanceMap;
 import database.DBSet;
 import utils.Converter;
 
+/*
 
-// typeBytes[1] (version) = 1 - CONFISCATE CREDIT
+## typeBytes
+0 - record type
+1 - record version
+2 - property 1
+3 = property 2
+
+## version 0
 // typeBytes[2] = -128 if NO AMOUNT
 // typeBytes[3] = -128 if NO DATA
+
+## version 1
+// typeBytes[1] (version) = 1 - if backward - CONFISCATE CREDIT
+
+## version 2
+typeBytes[1] - version
+
+#### PROPERTY 1
+typeBytes[2].0 = -128 if NO AMOUNT
+typeBytes[2].1 = -64 if backward - CONFISCATE CREDIT
+
+#### PROPERTY 2
+typeBytes[3].0 = -128 if NO DATA
+
+*/
+
 
 public class R_Send extends TransactionAmount {
 
 	private static final byte TYPE_ID = (byte)Transaction.SEND_ASSET_TRANSACTION;
 	private static final String NAME_ID = "Send";
+	private static int position;
 
 	protected String head;
 	protected byte[] data;
@@ -68,9 +103,9 @@ public class R_Send extends TransactionAmount {
 		this(typeBytes, creator, (byte)0, recipient, key, amount, head, data, isText, encrypted, 0l, reference);
 		this.signature = signature;
 	}
-	// FOR CONFISCATE CREDIT
-	public R_Send(byte version, PublicKeyAccount creator, byte feePow, Account recipient, long key, BigDecimal amount, String head, byte[] data, byte[] isText, byte[] encrypted, long timestamp, Long reference) {
-		this(new byte[]{TYPE_ID, version, 0, 0}, creator, feePow, recipient, key, amount, head, data, isText, encrypted, timestamp, reference);
+	// FOR BACKWARDS - CONFISCATE CREDIT
+	public R_Send(byte version, byte property1, byte property2, PublicKeyAccount creator, byte feePow, Account recipient, long key, BigDecimal amount, String head, byte[] data, byte[] isText, byte[] encrypted, long timestamp, Long reference) {
+		this(new byte[]{TYPE_ID, version, property1, property2}, creator, feePow, recipient, key, amount, head, data, isText, encrypted, timestamp, reference);
 	}
 	public R_Send(PublicKeyAccount creator, byte feePow, Account recipient, long key, BigDecimal amount, String head, byte[] data, byte[] isText, byte[] encrypted, long timestamp, Long reference) {
 		this(new byte[]{TYPE_ID, 0, 0, 0}, creator, feePow, recipient, key, amount, head, data, isText, encrypted, timestamp, reference);
@@ -317,7 +352,8 @@ public class R_Send extends TransactionAmount {
 		}
 
 	}
-
+	
+	
 	@Override
 	public byte[] toBytes(boolean withSign, Long releaserReference) {
 

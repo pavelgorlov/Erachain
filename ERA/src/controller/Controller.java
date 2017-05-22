@@ -58,6 +58,7 @@ import core.account.Account;
 import core.account.PrivateKeyAccount;
 import core.account.PublicKeyAccount;
 import core.block.Block;
+import core.block.GenesisBlock;
 import core.crypto.Base58;
 import core.crypto.Crypto;
 import core.item.ItemCls;
@@ -114,8 +115,8 @@ public class Controller extends Observable {
 	// IF new abilities is made - new license insert in CHAIN and set this KEY
 	public static final long LICENSE_KEY = 1001l;
 	public static final String APP_NAME = BlockChain.DEVELOP_USE?"ERA-DEVELOP":"ERA";
-	private static final String version = "3.03.02";
-	private static final String buildTime = "2017-03-21 19:33:33 UTC";
+	private static final String version = "3.04.01";
+	private static final String buildTime = "2017-05-21 15:33:33 UTC";
 	private static long buildTimestamp;
 	
 	// used in controller.Controller.startFromScratchOnDemand() - 0 uses in code!
@@ -134,7 +135,7 @@ public class Controller extends Observable {
 	private WebService webService;
 	private BlockChain blockChain;
 	private BlockGenerator blockGenerator;
-	private Wallet wallet;
+	public Wallet wallet;
 	private Synchronizer synchronizer;
 	private TransactionCreator transactionCreator;
 	private boolean needSync = false;
@@ -792,29 +793,73 @@ public class Controller extends Observable {
 		
 	public void onConnect(Peer peer) {
 
-		if(this.dbSet.isStoped())
+		if(this.isStopping)
 			return;
 		
 		// SEND FOUNDMYSELF MESSAGE
-		peer.sendMessage( MessageFactory.getInstance().createFindMyselfMessage( 
+		if (!peer.sendMessage( MessageFactory.getInstance().createFindMyselfMessage( 
 			Controller.getInstance().getFoundMyselfID() 
-			));
+			)))
+			return;
 
 		// SEND VERSION MESSAGE
-		peer.sendMessage( MessageFactory.getInstance().createVersionMessage( 
+		if (!peer.sendMessage( MessageFactory.getInstance().createVersionMessage( 
 			Controller.getVersion(),
-			getBuildTimestamp() ));
+			getBuildTimestamp() )))
+			return;
 		
 		// GET GENESIS BLOCK - TEST WRONG CHAIN
 		byte[]  genesisBlockSign = Controller.getInstance().getBlockChain().getGenesisBlock().getSignature();
+		
+		/*
 		// SEND GENESIS BLOCK MESSAGE
-		peer.sendMessage(MessageFactory.getInstance().createGetBlockMessage(genesisBlockSign));
+		////peer.sendMessage(MessageFactory.getInstance().createGetBlockMessage(genesisBlockSign));
+		//SEND MESSAGE TO PEER
+		Message mess = MessageFactory.getInstance().createGetBlockMessage(genesisBlockSign);
+		BlockMessage response = (BlockMessage) peer.getResponse(mess);
+		
+		//CHECK IF WE GOT RESPONSE
+		if(response == null)
+		{
+			//ERROR
+			//error = true;
+			return; // WRONG GENESIS BLOCK
+		}
+		
+		Block block = response.getBlock();
+		//CHECK BLOCK SIGNATURE
+		if(block == null || !(block instanceof GenesisBlock))
+		{
+			//error = true;
+			return; // WRONG GENESIS BLOCK
+		}
+		
+		// TODO CHECK GENESIS BLOCK on CONNECT
+		Message mess = MessageFactory.getInstance().createGetHeadersMessage(genesisBlockSign);
+		GetSignaturesMessage response = (GetSignaturesMessage) peer.getResponse(mess);
+		
+		//CHECK IF WE GOT RESPONSE
+		if(response == null)
+		{
+			//ERROR
+			//error = true;
+			return; // WRONG GENESIS BLOCK
+		}
+		
+		byte[] header = response.getParent();
+		if (header == null)
+		{
+			return; // WRONG GENESIS BLOCK
+		}
+		*/
+
 
 		// GET HEIGHT
 		Tuple2<Integer, Long> HWeight = this.blockChain.getHWeight(dbSet, false);
 		// SEND HEIGTH MESSAGE
-		peer.sendMessage(MessageFactory.getInstance().createHWeightMessage(
-				HWeight));
+		if (!peer.sendMessage(MessageFactory.getInstance().createHWeightMessage(
+				HWeight)))
+			return;
 
 		// GET CURRENT WIN BLOCK
 		Block winBlock = this.blockChain.getWaitWinBuffer();
@@ -823,6 +868,9 @@ public class Controller extends Observable {
 			peer.sendMessage(MessageFactory.getInstance().createWinBlockMessage(winBlock));
 		}
 
+		if (this.isStopping)
+			return;
+		
 		if (this.status == STATUS_NO_CONNECTIONS) {
 			// UPDATE STATUS
 			this.status = STATUS_OK;
@@ -1125,7 +1173,12 @@ public class Controller extends Observable {
 
 
 				// ASK BLOCK FROM BLOCKCHAIN
-				newBlock = blockMessage.getBlock();
+				if (newBlockHeight == 1) {
+					// genesis block
+					newBlock = (GenesisBlock) blockMessage.getBlock();
+				} else 
+					newBlock = blockMessage.getBlock();
+				
 				LOGGER.debug("mess from " + blockMessage.getSender().getAddress());
 				LOGGER.debug(" received new chain Block " + newBlock.toString(dbSet));
 
@@ -1284,7 +1337,10 @@ public class Controller extends Observable {
 		// CREATE MESSAGE
 		Message message = MessageFactory.getInstance().createWinBlockMessage(newBlock);
 		
-		// BROADCAST MESSAGE		
+		if (this.isOnStopping() || this.dbSet.isStoped())
+			return;
+
+		// BROADCAST MESSAGE
 		this.network.broadcast(message, excludes);
 		
 	}
@@ -1331,7 +1387,7 @@ public class Controller extends Observable {
 		*/
 	}
 
-	private void broadcastTransaction(Transaction transaction) {
+	public void broadcastTransaction(Transaction transaction) {
 
 		if (Controller.getInstance().getStatus() == Controller.STATUS_OK) {
 			// CREATE MESSAGE
@@ -1386,7 +1442,7 @@ public class Controller extends Observable {
 					}
 				} catch (Exception e) {
 					// error on peer - disconnect!
-					this.network.tryDisconnect(maxHW.c, 0, e.getMessage());
+					this.network.tryDisconnect(maxHW.c, 0, "core.Synchronizer.getBlock - " + e.getMessage());
 				}
 			}
 		}
@@ -1484,6 +1540,8 @@ public class Controller extends Observable {
 		
 		// send to ALL my HW
 		broadcastHWeight(null);
+		if (this.isStopping)
+			return;
 
 		// NOTIFY
 		this.setChanged();
@@ -1796,7 +1854,7 @@ public class Controller extends Observable {
 		
 		// CHECK IF IN TRANSACTION DATABASE
 		if (database.getTransactionMap().contains(signature)) {
-		return database.getTransactionMap().get(signature);
+			return database.getTransactionMap().get(signature);
 		}
 		return null;
 	}
@@ -1805,12 +1863,12 @@ public class Controller extends Observable {
 		return this.wallet.getLastTransactions(account, limit);
 	}
 
-	public List<Pair<Account, Block>> getLastBlocks() {
-		return this.wallet.getLastBlocks();
+	public List<Pair<Account, Block>> getLastBlocks(int limit) {
+		return this.wallet.getLastBlocks(limit);
 	}
 
-	public List<Block> getLastBlocks(Account account) {
-		return this.wallet.getLastBlocks(account);
+	public List<Block> getLastBlocks(Account account, int limit) {
+		return this.wallet.getLastBlocks(account, limit);
 	}
 
 	public List<Pair<Account, Name>> getNames() {
@@ -2231,7 +2289,7 @@ public class Controller extends Observable {
 		}
 	}
 
-	public Pair<Transaction, Integer> createPoll(PrivateKeyAccount creator,
+	public Transaction createPoll(PrivateKeyAccount creator,
 			String name, String description, List<String> options,
 			int feePow) {
 		// CREATE ONLY ONE TRANSACTION AT A TIME
@@ -2309,30 +2367,36 @@ public class Controller extends Observable {
 	}
 
 	public Transaction issueAsset(PrivateKeyAccount creator,
-			String name, String description, boolean movable, long quantity, byte scale, boolean divisible,
+			String name, String description,
+			byte[] icon, byte[] image,
+			boolean movable, long quantity, byte scale, boolean divisible,
 			int feePow) {
 		// CREATE ONLY ONE TRANSACTION AT A TIME
 		synchronized (this.transactionCreator) {
 			return this.transactionCreator.createIssueAssetTransaction(creator,
-					name, description, movable, quantity, scale, divisible, feePow);
+					name, description, icon, image, movable, quantity, scale, divisible, feePow);
 		}
 	}
 
 	public Pair<Transaction, Integer> issueImprint(PrivateKeyAccount creator,
-			String name, String description, int feePow) {
+			String name, String description,
+			byte[] icon, byte[] image,
+			int feePow) {
 		// CREATE ONLY ONE TRANSACTION AT A TIME
 		synchronized (this.transactionCreator) {
 			return this.transactionCreator.createIssueImprintTransaction(creator,
-					name, description, feePow);
+					name, description, icon, image, feePow);
 		}
 	}
 
-	public Pair<Transaction, Integer> issueNote(PrivateKeyAccount creator,
-			String name, String description, int feePow) {
+	public Transaction issueNote(PrivateKeyAccount creator,
+			String name, String description,
+			byte[] icon, byte[] image,
+			int feePow) {
 		// CREATE ONLY ONE TRANSACTION AT A TIME
 		synchronized (this.transactionCreator) {
 			return this.transactionCreator.createIssueNoteTransaction(creator,
-					name, description, feePow);
+					name, description, icon, image, feePow);
 		}
 	}
 
@@ -2364,21 +2428,25 @@ public class Controller extends Observable {
 		}
 	}
 
-	public Pair<Transaction, Integer> issueStatus(PrivateKeyAccount creator,
-			String name, String description, boolean unique, int feePow) {
+	public Transaction issueStatus(PrivateKeyAccount creator,
+			String name, String description, boolean unique,
+			byte[] icon, byte[] image,
+			int feePow) {
 		// CREATE ONLY ONE TRANSACTION AT A TIME
 		synchronized (this.transactionCreator) {
 			return this.transactionCreator.createIssueStatusTransaction(creator,
-					name, description, unique, feePow);
+					name, description, icon, image, unique, feePow);
 		}
 	}
 
-	public Pair<Transaction, Integer> issueUnion(PrivateKeyAccount creator,
-			String name, long birthday, long parent, String description, int feePow) {
+	public Transaction issueUnion(PrivateKeyAccount creator,
+			String name, long birthday, long parent, String description,
+			byte[] icon, byte[] image,
+			int feePow) {
 		// CREATE ONLY ONE TRANSACTION AT A TIME
 		synchronized (this.transactionCreator) {
 			return this.transactionCreator.createIssueUnionTransaction(creator,
-					name, birthday, parent, description, feePow);
+					name, birthday, parent, description, icon, image, feePow);
 		}
 	}
 
@@ -2435,19 +2503,23 @@ public class Controller extends Observable {
 					key, amount, feePow, head, message, isText, encryptMessage);
 		}
 	}
-	public Pair<Transaction, Integer> r_Send(byte version, PrivateKeyAccount sender,
+	public Pair<Transaction, Integer> r_Send(byte version, byte property1, byte property2, 
+			PrivateKeyAccount sender,
 			int feePow, Account recipient, long key,BigDecimal amount,
 			String head, byte[] isText, byte[] message, byte[] encryptMessage) {
 		synchronized (this.transactionCreator) {
-			return this.transactionCreator.r_Send(version, sender, recipient,
+			return this.transactionCreator.r_Send(version, property1, property2,
+					sender, recipient,
 					key, amount, feePow, head, message, isText, encryptMessage);
 		}
 	}
 
-	public Pair<Transaction, Integer> signNote(boolean asPack, PrivateKeyAccount sender,
+	public Transaction r_SignNote(byte version, byte property1, byte property2, 
+			boolean asPack, PrivateKeyAccount sender,
 			int feePow,	long key, byte[] message, byte[] isText, byte[] encrypted) {
 		synchronized (this.transactionCreator) {
-			return this.transactionCreator.signNote(asPack, sender, feePow, key, message, isText, encrypted);
+			return this.transactionCreator.r_SignNote(version, property1, property2,
+					asPack, sender, feePow, key, message, isText, encrypted);
 		}
 	}
 

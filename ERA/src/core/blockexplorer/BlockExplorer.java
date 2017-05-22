@@ -1,4 +1,5 @@
 package core.blockexplorer;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 // 30/03 ++ asset - Trans_Amount
 import java.math.BigDecimal;
@@ -23,26 +24,22 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import javax.swing.JTextField;
 import javax.ws.rs.core.UriInfo;
-
 import org.apache.commons.net.util.Base64;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 import org.mapdb.Fun;
 import org.mapdb.Fun.Tuple2;
 import org.mapdb.Fun.Tuple3;
 import org.mapdb.Fun.Tuple4;
 import org.mapdb.Fun.Tuple6;
-
 import com.github.rjeschke.txtmark.Processor;
-
 import at.AT;
 import at.AT_Transaction;
 import controller.Controller;
 import core.account.Account;
-import core.account.PublicKeyAccount;
 import core.block.Block;
 import core.block.GenesisBlock;
 import core.crypto.Base58;
@@ -81,15 +78,10 @@ import core.voting.PollOption;
 import database.DBSet;
 import database.SortableList;
 import gui.items.persons.TableModelPersons;
-import gui.items.statement.Statements_Table_Model_Search;
-import gui.items.statement.Statements_Vouch_Table_Model;
+import gui.library.library;
 import gui.models.PeersTableModel;
 import gui.models.PersonAccountsModel;
-import gui.models.PersonStatusesModel;
-import gui.models.WalletItemPersonsTableModel;
 import lang.Lang;
-import lang.LangFile;
-import network.Peer;
 import settings.Settings;
 import utils.BlExpUnit;
 import utils.DateTimeFormat;
@@ -107,7 +99,6 @@ public class BlockExplorer
 	private Locale local = new Locale("ru","RU"); // РЎвЂћР С•РЎР‚Р С�Р В°РЎвЂљ Р Т‘Р В°РЎвЂљРЎвЂ№
 	private DateFormat df = DateFormat.getDateInstance(DateFormat.DATE_FIELD, local); // Р Т‘Р В»РЎРЏ РЎвЂћР С•РЎР‚Р С�Р В°РЎвЂљР В° Р Т‘Р В°РЎвЂљРЎвЂ№
 	private static final long FEE_KEY = Transaction.FEE_KEY;
-	private String lang; 
 	public static final String  LANG_DEFAULT = "en";
 	private  String lang_file;
 	
@@ -132,16 +123,6 @@ public class BlockExplorer
 		Stopwatch stopwatchAll = new Stopwatch();
 
 		Map output = new LinkedHashMap();
-
-	
-		
-		
-		
-		
-		
-	
-		
-		
 //lang		
 		if(!info.getQueryParameters().containsKey("lang")){
 			lang_file = LANG_DEFAULT +".json"; 	
@@ -172,14 +153,8 @@ public class BlockExplorer
 		output.put("id_menu_pals_asset",  Lang.getInstance().translate_from_langObj("Polls",langObj));
 		output.put("id_menu_assets", Lang.getInstance().translate_from_langObj("Assets",langObj));
 		output.put("id_menu_aTs", Lang.getInstance().translate_from_langObj("ATs",langObj));
-		
 	
-	
-	
-		
-		
-
-			if(info.getQueryParameters().containsKey("balance"))
+		if(info.getQueryParameters().containsKey("balance"))
 			{
 				output.put("lastBlock", jsonQueryLastBlock());
 				for (String address : info.getQueryParameters().get("balance")) {
@@ -1630,7 +1605,7 @@ if ( asset_1 == null) {
 	private Map jsonQueryPerson(String first) {
 		// TODO Auto-generated method stub
 		Map output=new LinkedHashMap();
-		TableModelPersons search_Table_Model = new TableModelPersons();
+		WEB_TableModelPersons search_Table_Model = new WEB_TableModelPersons();
 		
 		PersonCls person = search_Table_Model.getPerson(new Integer(first)-1);
 		byte[] b = person.getImage();
@@ -1806,7 +1781,7 @@ if ( asset_1 == null) {
 		}
 */
 		Map output=new LinkedHashMap();
-		TableModelPersons search_Table_Model = new TableModelPersons();
+		WEB_TableModelPersons search_Table_Model = new WEB_TableModelPersons();
 		
 
 		output.put("row", search_Table_Model.getRowCount());
@@ -3476,6 +3451,12 @@ if ( asset_1 == null) {
 			out_statement.put("person_key", model_Statements.get_person_key(row));
 			
 			for (int column=0; column < column_Count; column++ ){
+				
+				
+				
+				
+				
+				
 				out_statement.put(model_Statements.getColumnNameNO_Translate(column).replace(' ', '_'), model_Statements.getValueAt(row, column).toString());
 				
 			}
@@ -3495,7 +3476,7 @@ if ( asset_1 == null) {
 		Map output=new LinkedHashMap();
 		
 		R_SignNote trans = (R_SignNote) DBSet.getInstance().getTransactionFinalMap().getTransaction(new Integer(block), new Integer(seg_No));
-		NoteCls statement = (NoteCls)ItemCls.getItem(DBSet.getInstance(), ItemCls.NOTE_TYPE, trans.getKey());
+		
 		
 		
 	//	output.put("Label_title", Lang.getInstance().translate_from_langObj("Title",langObj));
@@ -3508,7 +3489,274 @@ if ( asset_1 == null) {
 	
 		output.put("block",block);
 		output.put("Seg_No",seg_No);
+		
+		NoteCls statement = (NoteCls)ItemCls.getItem(DBSet.getInstance(), ItemCls.NOTE_TYPE, trans.getKey());
+			
+		
+		if (!trans.isEncrypted()) {
+			
+			
+			
+			if (trans.getVersion()==2){
+// version 2	
+				Tuple4<String, String, JSONObject, HashMap<String, Tuple2<Boolean, byte[]>>> map_Data;
+				
+				try {
+					map_Data = trans.parse_Data_V2();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return null;
+				}
+				
+				String str_HTML = "";
+				if ( map_Data.b != null) str_HTML = "<b>"+Lang.getInstance().translate("Title") + ": </b>" +  map_Data.b +"\n";
+					
+				JSONObject jSON = map_Data.c;
+				// parse JSON
+				if (jSON != null){
+					
+	
+	
+	// V2.0 Template
+					if (jSON.containsKey("Template") ){
+						Long key = new Long(jSON.get("Template")+"");
+						NoteCls note = (NoteCls) ItemCls.getItem(DBSet.getInstance(), ItemCls.NOTE_TYPE,key);
+						 if (note != null){
+							 String description = note.getDescription(); 	
+					
+	// Template Params
+						if (jSON.containsKey("Statement_Params") ){
+						
+							 String str = jSON.get("Statement_Params").toString();
+							 JSONObject params = new JSONObject();;
+							try {
+								params = (JSONObject) JSONValue.parseWithException(str);
+							} catch (ParseException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							  Set<String> kS = params.keySet();
+							 for (String s:kS){
+									description = description.replace("{{" + s + "}}", (CharSequence) params.get(s));
+							 }
+
+				
+					
+					
+					
+						}
+						str_HTML+= description + "\n";
+					}
+					}
+	// V2.1 Template
+					if ( jSON.containsKey("TM")){
+						Long key = new Long(jSON.get("TM")+"");
+						NoteCls note = (NoteCls) ItemCls.getItem(DBSet.getInstance(), ItemCls.NOTE_TYPE,key);
+						if (note != null){
+							 String description = note.getDescription(); 
+						 
+	// Template Params
+							 if (jSON.containsKey("PR")){
+								 String str = jSON.get("PR").toString();
+								 JSONObject params = new JSONObject();;
+								try {
+									params = (JSONObject) JSONValue.parseWithException(str);
+								} catch (ParseException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								  Set<String> kS = params.keySet();
+								 for (String s:kS){
+										description = description.replace("{{" + s + "}}", (CharSequence) params.get(s));
+								 }
+	
+					
+					
+					
+						}
+							 str_HTML+= description + "\n";
+					}
+						 
+					}
+// Message v2.0
+					if (jSON.containsKey("Message")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj) + ": </b>\n"+ jSON.get("Message") +"\n";
+	// v 2.1
+					if (jSON.containsKey("MS")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj) + ": </b>\n"+jSON.get("MS") +"\n";
+	// Hashes
+		// v2.0
+					if (jSON.containsKey("Hashes")){
+						str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Hashes", langObj) + ": </b>\n";
+						String hasHes = "";
+						String str = jSON.get("Hashes").toString();
+						 JSONObject params = new JSONObject();
+						try {
+							params = (JSONObject) JSONValue.parseWithException(str);
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						 Set<String> kS = params.keySet();
+						 
+						 int i = 1;
+						 for (String s:kS){
+							hasHes += i + " " + s + " " + params.get(s) + "\n";
+						 }
+						 
+						 str_HTML += hasHes + "\n";
+					}
+	// v2.1
+					if (jSON.containsKey("HS")){
+						
+						str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Hashes", langObj) + ": <b>\n";
+						String hasHes = "";
+						String str = jSON.get("HS").toString();
+						 JSONObject params = new JSONObject();
+						try {
+							params = (JSONObject) JSONValue.parseWithException(str);
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						 Set<String> kS = params.keySet();
+						 
+						 int i = 1;
+						 for (String s:kS){
+							hasHes += i + " " + s + " " + params.get(s) + "\n";
+						 }
+						 
+						 str_HTML += hasHes + "\n";
+					
+					}
+	
+					
+				}
+// parse Ffiles
+	// v2.0
+				if (jSON.containsKey("&*&*%$$%_files_#$@%%%") ){
+					str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Files", langObj) + ": </b>\n";
+					String hasHes = "";
+					String str = jSON.get("&*&*%$$%_files_#$@%%%").toString();
+					 JSONObject params = new JSONObject();
+					try {
+						params = (JSONObject) JSONValue.parseWithException(str);
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					 Set<String> kS = params.keySet();
+					 
+					 int i = 1;
+					 JSONObject ss = new JSONObject();
+					 for (String s:kS){
+
+							
+							ss = (JSONObject) params.get(s);
+						
+						hasHes += i + " "  + ss.get("File_Name") + "\n";
+					 }
+					
+					 str_HTML += hasHes + "\n";
+				
+				}	
+//	v 2.1
+				if (jSON.containsKey("F") ){
+					
+					str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Files", langObj) + ": </b>\n";
+					String hasHes = "";
+					String str = jSON.get("F").toString();
+					 JSONObject params = new JSONObject();
+					try {
+						params = (JSONObject) JSONValue.parseWithException(str);
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					 Set<String> kS = params.keySet();
+					 
+					 int i = 1;
+					 JSONObject ss = new JSONObject();
+					 for (String s:kS){
+						
+							ss = (JSONObject) params.get(s);
+						
+						hasHes += i + " "  + ss.get("FN") + "\n";
+					 }
+					 
+					 str_HTML += hasHes + "\n";
+					
+				}	
+				
+				
+				
+				output.put("statement", library.to_HTML(str_HTML));	
+			}
+			
+			
+			else{
+			
+// version 1
+		 try {
+			 
+			 Set<String> kS;
+			 String description ="";
+			 String str;
+			 JSONObject params = new JSONObject();
+			 JSONObject data = new JSONObject();
+			 NoteCls note = (NoteCls) ItemCls.getItem(DBSet.getInstance(), ItemCls.NOTE_TYPE, statement.getKey());
+			 if (note != null){
+			 description = note.getDescription(); 
+			 data = (JSONObject) JSONValue.parseWithException(new String(trans.getData(), Charset.forName("UTF-8")));
+				str = data.get("Statement_Params").toString();
+				 params = (JSONObject) JSONValue.parseWithException(str);
+				  kS = params.keySet();
+				 for (String s:kS){
+						description = description.replace("{{" + s + "}}", (CharSequence) params.get(s));
+				 }
+			 }
+				String hasHes = "";
+				 str = data.get("Hashes").toString();
+				 params = (JSONObject) JSONValue.parseWithException(str);
+				 kS = params.keySet();
+				 
+				 int i = 1;
+				 for (String s:kS){
+					 hasHes += i + " " + s + " " + params.get(s) + "\n";
+				 }
+				 
+				 
+				 
+				 String sT =
+						  data.get("Title") + "\n\n"
+							+  description + "\n\n"
+							+    data.get("Message") + "\n\n"
+							+ hasHes;
+			
+			
+			
+			output.put("statement", library.to_HTML(sT));
+			 
+		 } catch (ParseException e) {
+		
+		
+		
+		
+		
 		output.put("statement", Processor.process(new String( trans.getData(), Charset.forName("UTF-8") )));
+		
+		 }
+		 }
+		
+		} else {
+			
+			NoteCls note = (NoteCls) ItemCls.getItem(DBSet.getInstance(), ItemCls.NOTE_TYPE, statement.getKey());
+			output.put("statement",note.getName() + "<br>"
+					+  Lang.getInstance().translate_from_langObj("Encrypted",langObj));			
+		}
+
+		
+		
+		
 		output.put("creator", trans.getCreator().getPersonAsString());
 		
 		

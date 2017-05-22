@@ -35,6 +35,8 @@ import javax.swing.table.TableCellRenderer;
 
 import org.apache.log4j.Logger;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.mapdb.Fun.Tuple2;
+
 import com.github.rjeschke.txtmark.Processor;
 
 import controller.Controller;

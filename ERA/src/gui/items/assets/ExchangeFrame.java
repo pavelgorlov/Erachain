@@ -2,7 +2,6 @@ package gui.items.assets;
 
 import lang.Lang;
 import utils.Pair;
-import gui.MainFrame;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -41,6 +40,7 @@ import core.item.assets.AssetCls;
 import core.item.assets.Order;
 import core.item.assets.Trade;
 import database.DBSet;
+import database.SortableList;
 import gui.MainFrame;
 import gui.library.MTable;
 
@@ -109,7 +109,7 @@ public class ExchangeFrame extends JDialog
 				
 				AssetPairSelect ss = new AssetPairSelect(have.getKey(),  action,  account);	
 			this.want = ss.pairAsset;
-			
+			ss.assetPairSelectTableModel.removeObservers();
 			}
 		   if(this.want == null) {
 			   this.dispose();
@@ -212,13 +212,15 @@ public class ExchangeFrame extends JDialog
 				public void actionPerformed(ActionEvent arg0) {
 					// TODO Auto-generated method stub
 					AssetPairSelect ss = new AssetPairSelect(have.getKey(), "", "");
-					
+					ss.assetPairSelectTableModel.removeObservers();
 					if(ss.pairAsset!= null)	
 					{
 						want = ss.pairAsset;
 					
 					jTextField_Asset_2.setText(want.getName());
 					jScrollPane_jPanel_RightPanel.setViewportView( new  pane_Tab(have, want, action, account));
+					
+					
 					}
 	
 					
@@ -251,7 +253,7 @@ public class ExchangeFrame extends JDialog
 	 //       jScrollPane_jPanel_RightPanel.setVerticalScrollBar(null);
 	        jScrollPane_jPanel_RightPanel.setViewportView( new  pane_Tab(have, want, action, account));
 	    //      tt = new  pane_Tab(have, want, action, account);
-	          getContentPane().add(new  pane_Tab(have, want, action, account), gridBagConstraints);
+	          getContentPane().add(jScrollPane_jPanel_RightPanel, gridBagConstraints);
 	          
 	           JPanel ee = new JPanel();
 	          
@@ -259,12 +261,14 @@ public class ExchangeFrame extends JDialog
 			this.pack();
 			this.setResizable(true);
 	//		if(action == "Buy" || action =="To sell") this.setSize(900,800);
-			 int wH = (MainFrame.getInstance().desktopPane.getWidth()- MainFrame.getInstance().desktopPane.getWidth()*15/100);
-			 int hG = (MainFrame.getInstance().desktopPane.getHeight()- MainFrame.getInstance().desktopPane.getHeight()*15/100);
-			 this.setMinimumSize(new Dimension(100,100));
-			this.setSize(new Dimension(wH,hG));
-			this.setPreferredSize(new Dimension(wH,hG));
-			this.setLocationRelativeTo(null);
+	//		 int wH = (MainFrame.getInstance().desktopPane.getWidth()- MainFrame.getInstance().desktopPane.getWidth()*15/100);
+	//		 int hG = (MainFrame.getInstance().desktopPane.getHeight()- MainFrame.getInstance().desktopPane.getHeight()*15/100);
+	//		 this.setMinimumSize(new Dimension(100,100));
+	//		this.setSize(new Dimension(wH,hG));
+	//		this.setPreferredSize(new Dimension(wH,hG));
+			this.setSize(MainFrame.getInstance().getWidth()-100, MainFrame.getInstance().getHeight()-100);
+			this.setMaximumSize(new Dimension(MainFrame.getInstance().getWidth()-10, MainFrame.getInstance().getHeight()-10));
+			this.setLocationRelativeTo(MainFrame.getInstance());
 			this.setVisible(true);
 	        
 	        
@@ -349,7 +353,7 @@ public class ExchangeFrame extends JDialog
 			JLabel lblTitle = new JLabel(Lang.getInstance().translate("Buy %have%").replace("%have%", this.have.toString()).replace("%want%", this.want.toString()));//this.have.toString() + " / " + this.want.toString());
 					
 		//	lblTitle.setFont(new Font("Serif", Font.PLAIN, 18));
-			jPanel_Trade.add(lblTitle, labelGBC);
+	//		jPanel_Trade.add(lblTitle, labelGBC);
 			if (action =="To sell") lblTitle.setVisible(false);
 			
 					
@@ -357,7 +361,7 @@ public class ExchangeFrame extends JDialog
 			labelGBC.gridy = 1;
 			JLabel lblBuy = new JLabel( Lang.getInstance().translate("Sell %want%").replace("%have%", this.have.toString()).replace("%want%", this.want.toString()));
 		//	lblBuy.setFont(new Font("Serif", Font.PLAIN, 18));
-			jPanel_Trade.add(lblBuy, labelGBC);
+	//		jPanel_Trade.add(lblBuy, labelGBC);
 			if (action == "To sell")lblBuy.setVisible(false);
 			
 			//CREATE SELL LABEL
@@ -372,7 +376,7 @@ public class ExchangeFrame extends JDialog
 					JLabel lblTitle1 = new JLabel(Lang.getInstance().translate("Sell %have%" ).replace("%have%", this.have.toString()).replace("%want%", this.want.toString()));
 							
 				//	lblTitle1.setFont(new Font("Serif", Font.PLAIN, 18));
-					jPanel_Trade.add(lblTitle1, labelGBC);
+	//				jPanel_Trade.add(lblTitle1, labelGBC);
 					if(action == "Buy" ) lblTitle1.setVisible(false);
 					
 					labelGBC.gridy = 1;
@@ -380,7 +384,7 @@ public class ExchangeFrame extends JDialog
 			JLabel lblSell = new JLabel( Lang.getInstance().translate("Buy %want%").replace("%have%", this.have.toString()).replace("%want%", this.want.toString()));
 
 		//	lblSell.setFont(new Font("Serif", Font.PLAIN, 18));
-			jPanel_Trade.add(lblSell, labelGBC);
+	//		jPanel_Trade.add(lblSell, labelGBC);
 			if (action == "Buy")lblSell.setVisible(false);
 			
 			//CREATE BUY PANEL
@@ -438,6 +442,8 @@ public class ExchangeFrame extends JDialog
 			JMenuItem trades = new JMenuItem(Lang.getInstance().translate("Trades"));
 			trades.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
+					if(sellOrdersTableModel.getSortableList().size()==0)return;
+					
 					int row = sellOrdersTable.getSelectedRow();
 					row = sellOrdersTable.convertRowIndexToModel(row);
 
@@ -449,6 +455,7 @@ public class ExchangeFrame extends JDialog
 			JMenuItem cancel = new JMenuItem(Lang.getInstance().translate("Cancel"));
 			cancel.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
+					if(sellOrdersTableModel.getSortableList().size()==0)return;
 					int row = sellOrdersTable.getSelectedRow();
 					row = sellOrdersTable.convertRowIndexToModel(row);
 
@@ -535,17 +542,22 @@ public class ExchangeFrame extends JDialog
 			JMenuItem buyTrades = new JMenuItem(Lang.getInstance().translate("Trades"));
 			buyTrades.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
+					SortableList<BigInteger, Order> sl = buyOrdersTableModel.getSortableList();
+					if (sl.size()==0) return;
+					
 					int row = buyOrdersTable.getSelectedRow();
 					row = buyOrdersTable.convertRowIndexToModel(row);
 
 					Order order = buyOrdersTableModel.getOrder(row);
-					new TradesFrame(order);
+					if(order != null)	new TradesFrame(order);
 				}
 			});
 			buyOrdersMenu.add(buyTrades);
 			JMenuItem buyCancel = new JMenuItem(Lang.getInstance().translate("Cancel"));
 			buyCancel.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
+					SortableList<BigInteger, Order> sl = buyOrdersTableModel.getSortableList();
+					if (sl.size()==0) return;
 					int row = buyOrdersTable.getSelectedRow();
 					row = buyOrdersTable.convertRowIndexToModel(row);
 

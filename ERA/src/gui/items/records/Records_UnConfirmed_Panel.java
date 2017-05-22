@@ -1,9 +1,10 @@
 package gui.items.records;
 
 import gui.CoreRowSorter;
-import gui.MainFrame;
 import gui.Split_Panel;
+import gui.items.accounts.Account_Send_Dialog;
 import gui.items.assets.AssetDetailsPanel001;
+import gui.items.mails.Mail_Send_Dialog;
 import gui.library.MTable;
 import gui.models.Balance_from_Adress_TableModel;
 import gui.models.Debug_Transactions_Table_Model;
@@ -13,10 +14,13 @@ import gui.models.Renderer_Right;
 import gui.models.WalletTransactionsTableModel;
 import gui.transaction.TransactionDetailsFactory;
 import lang.Lang;
+import utils.TableMenuPopupUtil;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 //import java.awt.ScrollPaneLayout;
 //import java.awt.la
 import java.awt.event.MouseAdapter;
@@ -29,7 +33,9 @@ import java.util.TreeMap;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -41,9 +47,12 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
+import controller.Controller;
 import core.item.assets.AssetCls;
+import core.item.persons.PersonCls;
 import core.item.unions.UnionCls;
 import core.transaction.Transaction;
+import database.DBSet;
 import database.wallet.TransactionMap;
 
 @SuppressWarnings("serial")
@@ -56,7 +65,6 @@ public class Records_UnConfirmed_Panel extends  JPanel // JPanel
 
 	public Records_UnConfirmed_Panel()
 	{
-		
 		setName(Lang.getInstance().translate("Unconfirmed Records"));
 		//this.parent = parent;
 		this.setLayout(new GridBagLayout());
@@ -147,14 +155,14 @@ public class Records_UnConfirmed_Panel extends  JPanel // JPanel
 		});			
 		
 		
-		Split_Panel record_stpit = new Split_Panel();
+		Split_Panel record_stpit = new Split_Panel("");
 		record_stpit.toolBar_LeftPanel.setVisible(false);
 		record_stpit.jToolBar_RightPanel.setVisible(false);
 		record_stpit.searchToolBar_LeftPanel.setVisible(false);
 		
-		Dimension size = MainFrame.getInstance().desktopPane.getSize();
-		this.setSize(new Dimension((int)size.getWidth()-100,(int)size.getHeight()-100));
-		record_stpit.jSplitPanel.setDividerLocation((int)(size.getWidth()/1.618));
+//		Dimension size = MainFrame.getInstance().desktopPane.getSize();
+//		this.setSize(new Dimension((int)size.getWidth()-100,(int)size.getHeight()-100));
+	//	record_stpit.jSplitPanel.setDividerLocation((int)(size.getWidth()/1.618));
 		
 		// show	
 	//	record_stpit.jTable_jScrollPanel_LeftPanel.setModel(transactionsModel);
@@ -228,6 +236,45 @@ public class Records_UnConfirmed_Panel extends  JPanel // JPanel
 		
 		
 		this.add(record_stpit, tableGBC);
+		
+		
+		
+		JPopupMenu menu = new JPopupMenu();
+
+	
+    	    	
+    	    	JMenuItem item_Rebroadcast= new JMenuItem(Lang.getInstance().translate("Rebroadcast"));
+    	    
+    	    	item_Rebroadcast.addActionListener(new ActionListener(){
+    	  		@Override
+    	    	public void actionPerformed(ActionEvent e) {
+    	  			// code Rebroadcast
+    				
+					int row = record_stpit.jTable_jScrollPanel_LeftPanel.getSelectedRow();
+					row = record_stpit.jTable_jScrollPanel_LeftPanel.convertRowIndexToModel(row);
+					Transaction trans = transactionsModel.getTransaction(row);
+					// DBSet db = DBSet.getInstance();
+    	  			Controller.getInstance().broadcastTransaction(trans);
+    	  						
+    	  		}	
+    	  		});
+    	    	
+    	    	menu.add(item_Rebroadcast);
+    	    	JMenuItem item_Delete= new JMenuItem(Lang.getInstance().translate("Delete"));
+    	    	item_Delete.addActionListener(new ActionListener(){
+    	  		@Override
+    	    	public void actionPerformed(ActionEvent e) {
+    	   
+    	  			// code delete
+					int row = record_stpit.jTable_jScrollPanel_LeftPanel.getSelectedRow();
+					row = record_stpit.jTable_jScrollPanel_LeftPanel.convertRowIndexToModel(row);
+					Transaction trans = transactionsModel.getTransaction(row);
+					DBSet.getInstance().getTransactionMap().delete(trans);
+    	  			
+    				}});
+    	    	
+    	    	menu.add(item_Delete);
+   	    	TableMenuPopupUtil.installContextMenu(record_stpit.jTable_jScrollPanel_LeftPanel, menu);
 
 		//this.add(this.transactionsTable);       
 		

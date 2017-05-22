@@ -1,20 +1,30 @@
 package core.transaction;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 //import java.math.BigDecimal;
 //import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 //import java.util.List;
 //import java.util.LinkedHashMap;
 //import java.util.List;
 //import java.util.Map;
 //import org.apache.log4j.Logger;
 import java.util.List;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.mapdb.Fun.Tuple2;
+import org.mapdb.Fun.Tuple3;
+import org.mapdb.Fun.Tuple4;
 import org.mapdb.Fun.Tuple5;
 
 import com.google.common.primitives.Bytes;
@@ -82,6 +92,11 @@ public class R_SignNote extends Transaction {
 		// set props
 		this.setTypeBytes();
 	}
+	public R_SignNote(byte version, byte ptoperty1, byte ptoperty2, PublicKeyAccount creator, byte feePow, long noteKey, byte[] data, byte[] isText, byte[] encrypted, long timestamp, Long reference) {
+		this(new byte[]{TYPE_ID, version, ptoperty1, ptoperty2}, creator, feePow, noteKey, data, isText, encrypted, timestamp, reference);
+		// set props
+		this.setTypeBytes();
+	}
 	public R_SignNote(byte[] typeBytes, PublicKeyAccount creator, byte feePow, long noteKey, byte[] data,
 			byte[] isText, byte[] encrypted, PublicKeyAccount[] signers, byte[][] signatures, long timestamp, Long reference, byte[] signature)
 	{
@@ -98,10 +113,6 @@ public class R_SignNote extends Transaction {
 		this.signers = signers;
 		this.signatures = signatures;
 		this.setTypeBytes();
-	}
-	public R_SignNote(byte prop1, byte prop2, byte prop3, PublicKeyAccount creator, byte feePow, long noteKey, byte[] data, byte[] isText, byte[] encrypted, long timestamp, Long reference)
-	{
-		this(new byte[]{TYPE_ID, prop1, prop2, prop3}, creator, feePow, noteKey, data, isText, encrypted, timestamp, reference);
 	}
 
 	//GETTERS/SETTERS
@@ -497,4 +508,188 @@ public class R_SignNote extends Transaction {
 	public int calcBaseFee() {
 		return calcCommonFee();
 	}
+	public Tuple3<String,String,JSONObject> parse_Data_V2_Without_Files() throws Exception{
+		//Version, Title, JSON, Files	
+			
+			//CHECK IF WE MATCH BLOCK LENGTH
+			if (data.length < Transaction.DATA_JSON_PART_LENGTH)
+			{
+				throw new Exception("Data does not match block length " + data.length);
+			}
+			int position = 0;
+			
+			// read version
+			byte[] version_Byte = Arrays.copyOfRange(data, position , Transaction.DATA_VERSION_PART_LENGTH);
+			position += Transaction.DATA_VERSION_PART_LENGTH;
+			// read title
+			byte[] titleSizeBytes = Arrays.copyOfRange(data, position, position + Transaction.DATA_TITLE_PART_LENGTH);
+			int titleSize = Ints.fromByteArray(titleSizeBytes);
+			position += Transaction.DATA_TITLE_PART_LENGTH;
+			
+			byte[] titleByte = Arrays.copyOfRange(data, position , position + titleSize);
+			
+			position +=titleSize;
+			//READ Length JSON PART
+			byte[] dataSizeBytes = Arrays.copyOfRange(data, position , position + Transaction.DATA_JSON_PART_LENGTH);
+			int JSONSize = Ints.fromByteArray(dataSizeBytes);	
+			
+			position += Transaction.DATA_JSON_PART_LENGTH;
+			//READ JSON
+			byte[] arbitraryData = Arrays.copyOfRange(data, position, position + JSONSize);
+			JSONObject json = (JSONObject) JSONValue.parseWithException(new String(arbitraryData, Charset.forName("UTF-8")));
+			
+			String title = new String(titleByte, Charset.forName("UTF-8"));
+			String version = new String(version_Byte, Charset.forName("UTF-8"));
+			
+						
+			 return new Tuple3(version,title,json);
+		}
+	
+	public  Tuple4<String,String,JSONObject,HashMap <String,Tuple2<Boolean, byte[]>>> parse_Data_V2() throws Exception{
+		
+	return parse_Data_V2(this.data);	
+		
+	}
+	public static  Tuple4<String,String,JSONObject,HashMap <String,Tuple2<Boolean, byte[]>>> parse_Data_V2(byte[] data) throws Exception{
+	//Version, Title, JSON, Files	
+		
+		//CHECK IF WE MATCH BLOCK LENGTH
+		if (data.length < Transaction.DATA_JSON_PART_LENGTH)
+		{
+			throw new Exception("Data does not match block length " + data.length);
+		}
+		int position = 0;
+		
+		// read version
+		byte[] version_Byte = Arrays.copyOfRange(data, position , Transaction.DATA_VERSION_PART_LENGTH);
+		position += Transaction.DATA_VERSION_PART_LENGTH;
+		// read title
+		byte[] titleSizeBytes = Arrays.copyOfRange(data, position, position + Transaction.DATA_TITLE_PART_LENGTH);
+		int titleSize = Ints.fromByteArray(titleSizeBytes);
+		position += Transaction.DATA_TITLE_PART_LENGTH;
+		
+		byte[] titleByte = Arrays.copyOfRange(data, position , position + titleSize);
+		
+		position +=titleSize;
+		//READ Length JSON PART
+		byte[] dataSizeBytes = Arrays.copyOfRange(data, position , position + Transaction.DATA_JSON_PART_LENGTH);
+		int JSONSize = Ints.fromByteArray(dataSizeBytes);	
+		
+		position += Transaction.DATA_JSON_PART_LENGTH;
+		//READ JSON
+		byte[] arbitraryData = Arrays.copyOfRange(data, position, position + JSONSize);
+		JSONObject json = (JSONObject) JSONValue.parseWithException(new String(arbitraryData, Charset.forName("UTF-8")));
+		
+		String title = new String(titleByte, Charset.forName("UTF-8"));
+		String version = new String(version_Byte, Charset.forName("UTF-8"));
+		position += JSONSize;
+		HashMap<String,Tuple2<Boolean, byte[]>> out_Map = new HashMap<String,Tuple2<Boolean, byte[]>>();
+		JSONObject files;
+		Set files_key_Set;
+		//v2.0
+		if (json.containsKey("&*&*%$$%_files_#$@%%%")) { //return new Tuple4(version,title,json, null);
+	
+		
+		
+		files =(JSONObject) json.get("&*&*%$$%_files_#$@%%%");
+		
+		
+		files_key_Set = files.keySet();
+		for (int i = 0; i < files_key_Set.size(); i++) {
+			JSONObject file = (JSONObject) files.get(i+"");
+			
+			
+				String name = (String) file.get("File_Name"); // File_Name
+				Boolean zip = new Boolean((String) file.get("ZIP")); // ZIP
+				byte[] bb = Arrays.copyOfRange(data, position, position + new Integer((String) file.get("Size"))); //Size
+				position = position + new Integer((String) file.get("Size")); //Size
+				out_Map.put(name, new Tuple2(zip,bb));	
+					
+		}
+		 return new Tuple4(version,title,json, out_Map);
+		}
+		// v 2.1
+		if (json.containsKey("F")) { // return new Tuple4(version,title,json, null);
+		
+		
+		
+		files =(JSONObject) json.get("F");
+		
+		
+		files_key_Set = files.keySet();
+		for (int i = 0; i < files_key_Set.size(); i++) {
+			JSONObject file = (JSONObject) files.get(i+"");
+			
+			
+				String name = (String) file.get("FN"); // File_Name
+				Boolean zip = new Boolean((String) file.get("ZP")); // ZIP
+				byte[] bb = Arrays.copyOfRange(data, position, position + new Integer((String) file.get("SZ"))); //Size
+				position = position + new Integer((String) file.get("SZ")); //Size
+				out_Map.put(name, new Tuple2(zip,bb));	
+					
+		}
+		
+			
+		 return new Tuple4(version,title,json, out_Map);
+		}
+		return new Tuple4(version,title,json, null);
+	}
+	
+	public static  byte[]  Json_Files_to_Byte_V2(String title, JSONObject json, HashMap<String,Tuple2<Boolean,byte[]>> files) throws Exception {
+	
+		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+		outStream.write("v 2.00".getBytes()); // only 6 simbols!!!
+		byte[] title_Bytes = "".getBytes();
+		if (title !=null){
+			title_Bytes = title.getBytes();
+		}
+		
+		
+		byte[] size_Title = ByteBuffer.allocate(Transaction.DATA_TITLE_PART_LENGTH).putInt(title_Bytes.length).array();
+		
+		outStream.write(size_Title);
+		outStream.write(title_Bytes);
+		
+		if (json == null || json.equals("") ) return outStream.toByteArray();
+		
+		byte[] JSON_Bytes ;
+		byte[] size_Json;
+		
+		if (files == null || files.size() == 0){
+			JSON_Bytes = json.toString().getBytes();
+			// convert int to byte
+			size_Json = ByteBuffer.allocate(Transaction.DATA_JSON_PART_LENGTH).putInt( JSON_Bytes.length).array();
+			outStream.write(size_Json);
+			outStream.write(JSON_Bytes);
+			return outStream.toByteArray(); 
+		}
+		// if insert Files
+		Iterator<Entry<String, Tuple2<Boolean, byte[]>>> it = files.entrySet().iterator();
+		JSONObject files_Json = new JSONObject();
+		int i = 0;
+		 ArrayList<byte[]> out_files = new ArrayList<byte[]>();
+		while(it.hasNext()){
+			Entry<String, Tuple2<Boolean, byte[]>> file = it.next();
+			JSONObject file_Json = new JSONObject();
+			file_Json.put("FN", file.getKey()); //File_Name 
+			file_Json.put("ZP", file.getValue().a.toString()); //ZIP
+			file_Json.put("SZ", file.getValue().b.length+""); //Size
+			files_Json.put(i+"", file_Json);
+			out_files.add(i,file.getValue().b);
+			i++;
+		}
+		json.put("F",files_Json);
+		JSON_Bytes = json.toString().getBytes();
+		// convert int to byte
+		size_Json = ByteBuffer.allocate(Transaction.DATA_JSON_PART_LENGTH).putInt( JSON_Bytes.length).array();
+		outStream.write(size_Json);
+		outStream.write(JSON_Bytes);
+		for(i=0; i<out_files.size(); i++){
+				outStream.write(out_files.get(i));	
+		}
+		return outStream.toByteArray();
+
+	}
+	
+
 }

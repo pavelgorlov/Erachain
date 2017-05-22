@@ -1,6 +1,7 @@
 package gui.items.statement;
 
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,7 +24,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -33,7 +37,6 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JSplitPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.event.TableModelEvent;
@@ -44,6 +47,10 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.validation.constraints.Null;
 
+import org.apache.commons.net.util.Base64;
+import org.json.simple.JSONObject;
+import org.mapdb.Fun.Tuple2;
+
 import com.github.rjeschke.txtmark.Processor;
 
 import controller.Controller;
@@ -53,17 +60,23 @@ import core.crypto.Base58;
 import core.crypto.Crypto;
 import core.item.assets.AssetCls;
 import core.item.notes.NoteCls;
+import core.transaction.R_Send;
 import core.transaction.R_SignNote;
 import core.transaction.Transaction;
+import gui.MainFrame;
 import gui.PasswordPane;
 import gui.items.assets.ExchangeFrame;
 import gui.items.assets.TableModelItemAssets;
 import gui.items.imprints.Table_Model_Issue_Hashes;
 import gui.items.notes.ComboBoxModelItemsNotes;
+import gui.library.Issue_Confirm_Dialog;
 import gui.library.MButton;
 import gui.library.MImprintEDIT_Pane;
+import gui.library.MSplitPane;
 import gui.library.MTable;
+import gui.library.M_Fill_Template_Panel;
 import gui.library.My_JFileChooser;
+import gui.library.library;
 import gui.models.AccountsComboBoxModel;
 import gui.transaction.OnDealClick;
 import lang.Lang;
@@ -71,6 +84,8 @@ import utils.Compressor_ZIP;
 import utils.Converter;
 import utils.GZIP;
 import utils.Pair;
+import utils.StrJSonFine;
+import utils.Zip_Bytes;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -100,7 +115,9 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 	private DefaultTableModel attached_Files_Model;
 	private DefaultTableModel params_Template_Model;
 	protected NoteCls sel_note;
-	public JSplitPane sp_pan;
+	public MSplitPane sp_pan;
+	 M_Fill_Template_Panel fill_Template_Panel;
+	private Issue_Document_Panel th;
 
 	/**
      * Creates new form Issue_Document_Panel
@@ -108,7 +125,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
     public Issue_Document_Panel() {
     	jTextPane_Message_Public = new MImprintEDIT_Pane();
     	jTextPane_Message_Public.addHyperlinkListener(new HyperlinkListener(){
-
+    		
 			@Override
 			public void hyperlinkUpdate(HyperlinkEvent arg0) {
 				// TODO Auto-generated method stub
@@ -131,10 +148,10 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 			
 			
 		});
-    	
+    	th = this;
         initComponents();
        
-    jLabel_Template.setText(Lang.getInstance().translate("Select Template") + ":");
+  //  jLabel_Template.setText(Lang.getInstance().translate("Select Template") + ":");
     jLabel_Title_Message.setText(Lang.getInstance().translate("Title") + ":");
     jTextField_Title_Message.setText("");
     jTextField_Fee_Work.setText("0");
@@ -142,7 +159,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
     jCheckBox_Message_Private.setSelected(true);
     jCheckBox_Message_Public.setText(Lang.getInstance().translate("Text Message"));
     jCheckBox_Message_Public.setSelected(true);
-    jButton_View.setText(Lang.getInstance().translate("View"));
+//    jButton_View.setText(Lang.getInstance().translate("View"));
     jLabel_Account_Work.setText(Lang.getInstance().translate("Select Account") + ":");
     jButton_Work_OK.setText(Lang.getInstance().translate("Sign and Send"));
     jButton_Work_OK.addActionListener(new ActionListener()
@@ -241,7 +258,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 		}
 	});
  // combo Template
-     
+ /*    
    jComboBox_Template.addItemListener(new ItemListener(){
 
 		@Override
@@ -277,7 +294,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 			
 		}
 	});
-	
+	*/
     
     TableColumnModel at_F_Col_M = jTable_Attached_Files.getColumnModel();
     
@@ -313,12 +330,12 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 					row = jTable_Attached_Files.convertRowIndexToModel(row);
 					attached_Files_Model.setValueAt(new Boolean(!(boolean) attached_Files_Model.getValueAt(row, 2)), row, 2);
 					if (new Boolean((boolean)attached_Files_Model.getValueAt(row,2))) {
-					 Compressor_ZIP zip = new Compressor_ZIP();
-					attached_Files_Model.setValueAt(zip.compress((byte[]) attached_Files_Model.getValueAt(row, 4))	, row, 5); 	
+				//	 Compressor_ZIP zip = new Compressor_ZIP();
+				//	attached_Files_Model.setValueAt(zip.compress((byte[]) attached_Files_Model.getValueAt(row, 4))	, row, 5); 	
 					
 					byte[] z1 = null ;
 					try {
-						attached_Files_Model.setValueAt(GZIP.GZIPcompress( (byte[]) attached_Files_Model.getValueAt(row, 4)), row, 5);
+						attached_Files_Model.setValueAt(Zip_Bytes.compress( (byte[]) attached_Files_Model.getValueAt(row, 4)), row, 5);
 						z1 = (byte[]) attached_Files_Model.getValueAt(row, 4);
 						
 					} catch (Exception e1) {
@@ -387,8 +404,8 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         jScrollPane_Message_Public_TextPane = new javax.swing.JScrollPane();
         jScrollPane_Params_Template_Public_TextPane = new javax.swing.JScrollPane();
         jCheckBox_Message_Public = new javax.swing.JCheckBox();
-        jPanel_Message_Private = new javax.swing.JPanel();
-        jScrollPane_Message_Private_TextPane = new javax.swing.JScrollPane();
+        jPanel_Message = new javax.swing.JPanel();
+        jScrollPane_Message_TextPane = new javax.swing.JScrollPane();
         jTextPane_Message_Private = new javax.swing.JTextPane();
         jCheckBox_Message_Private = new javax.swing.JCheckBox();
         jTabbedPane_Other = new javax.swing.JTabbedPane();
@@ -405,11 +422,11 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         jButton_Add_Other_Hashes = new MButton();
         jButton_Remove_Other_Hashes = new MButton();
         jPanel_Title = new javax.swing.JPanel();
-        jLabel_Template = new javax.swing.JLabel();
-        jComboBox_Template = new JComboBox<NoteCls>(new ComboBoxModelItemsNotes());
+   //     jLabel_Template = new javax.swing.JLabel();
+  //      jComboBox_Template = new JComboBox<NoteCls>(new ComboBoxModelItemsNotes());
         jLabel_Title_Message = new javax.swing.JLabel();
         jTextField_Title_Message = new javax.swing.JTextField();
-        jButton_View = new MButton();
+  //      jButton_View = new MButton();
         jPanel_Work = new javax.swing.JPanel();
         jLabel_Account_Work = new javax.swing.JLabel();
         jComboBox_Account_Work = new JComboBox<Account>( new AccountsComboBoxModel());
@@ -430,13 +447,13 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 				// TODO Auto-generated method stub
 	
 			if (arg0.getType() != 0 && arg0.getColumn()<0 ) return;
-			System.out.print("\n row = " + arg0.getFirstRow() + "  Col="+ arg0.getColumn() + "   type =" + arg0.getType());
+		//	System.out.print("\n row = " + arg0.getFirstRow() + "  Col="+ arg0.getColumn() + "   type =" + arg0.getType());
 			String dd = params_Template_Model.getValueAt(arg0.getFirstRow(),  arg0.getColumn()).toString();
-			System.out.print("\n key:"+ params_Template_Model.getValueAt(arg0.getFirstRow(),  0) +" value:" + params_Template_Model.getValueAt(arg0.getFirstRow(),  arg0.getColumn()));
+		//	System.out.print("\n key:"+ params_Template_Model.getValueAt(arg0.getFirstRow(),  0) +" value:" + params_Template_Model.getValueAt(arg0.getFirstRow(),  arg0.getColumn()));
 			
 			 jTextPane_Message_Public.pars.replace("{{"+ params_Template_Model.getValueAt(arg0.getFirstRow(),  0) +"}}",(String) params_Template_Model.getValueAt(arg0.getFirstRow(),  arg0.getColumn()));
-			 System.out.print("\n");
-				System.out.print(jTextPane_Message_Public.pars);
+		//	 System.out.print("\n");
+		//		System.out.print(jTextPane_Message_Public.pars);
 			 jTextPane_Message_Public.setText(jTextPane_Message_Public.init_String(jTextPane_Message_Public.text, false));
 			arg0=arg0;
 			}});
@@ -449,12 +466,14 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         jPanel_Message_Public.setLayout(new java.awt.GridBagLayout());
 
         jScrollPane_Message_Public_TextPane.setViewportView(jTextPane_Message_Public);
-        sp_pan = new JSplitPane();
+        sp_pan = new MSplitPane();
+        sp_pan.set_CloseOnOneTouch(MSplitPane.ONE_TOUCH_CLOSE_RIGHT_BOTTOM);
         sp_pan.setLeftComponent(jScrollPane_Message_Public_TextPane);
-        
         jScrollPane_Params_Template_Public_TextPane.setViewportView(jTable_Params_Message_Public);
+        jScrollPane_Params_Template_Public_TextPane.setMinimumSize(new Dimension(0,0));
+        jTable_Params_Message_Public.setMinimumSize(new Dimension(0,0));
         sp_pan.setRightComponent(jScrollPane_Params_Template_Public_TextPane);
-        
+        sp_pan.setDividerLocation(400);
         
         
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -474,20 +493,23 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        jPanel_Message_Public.add(jCheckBox_Message_Public, gridBagConstraints);
+     //   jPanel_Message_Public.add(jCheckBox_Message_Public, gridBagConstraints);
 
-        jTabbedPane_Message.addTab(Lang.getInstance().translate("Public Part"), jPanel_Message_Public);
+     //   jTabbedPane_Message.addTab(Lang.getInstance().translate("Public Part"), jPanel_Message_Public);
+        fill_Template_Panel = new M_Fill_Template_Panel();
+        jTabbedPane_Message.addTab(Lang.getInstance().translate("Template"), fill_Template_Panel );
+        
 
-        jPanel_Message_Private.setLayout(new java.awt.GridBagLayout());
+        jPanel_Message.setLayout(new java.awt.GridBagLayout());
 
-        jScrollPane_Message_Private_TextPane.setViewportView(jTextPane_Message_Private);
+        jScrollPane_Message_TextPane.setViewportView(jTextPane_Message_Private);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         gridBagConstraints.weightx = 0.1;
         gridBagConstraints.weighty = 0.1;
-        jPanel_Message_Private.add(jScrollPane_Message_Private_TextPane, gridBagConstraints);
+        jPanel_Message.add(jScrollPane_Message_TextPane, gridBagConstraints);
 
         jCheckBox_Message_Private.setText("Text");
         jCheckBox_Message_Private.addActionListener(new java.awt.event.ActionListener() {
@@ -499,9 +521,9 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        jPanel_Message_Private.add(jCheckBox_Message_Private, gridBagConstraints);
+  //      jPanel_Message.add(jCheckBox_Message_Private, gridBagConstraints);
 
-        jTabbedPane_Message.addTab(Lang.getInstance().translate("Private Part"), jPanel_Message_Private);
+        jTabbedPane_Message.addTab(Lang.getInstance().translate("Message"), jPanel_Message);
      
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -514,7 +536,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(16, 8, 0, 8);
         add(jTabbedPane_Message, gridBagConstraints);
 
-        jPanel_Attached_Files.setMinimumSize(new java.awt.Dimension(0, 64));
+        jPanel_Attached_Files.setMinimumSize(new java.awt.Dimension(0, 0));
         jPanel_Attached_Files.setPreferredSize(new java.awt.Dimension(0, 64));
         jPanel_Attached_Files.setLayout(new java.awt.GridBagLayout());
 
@@ -566,7 +588,8 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         jPanel_Attached_Files.add(jPanel_Other_Attached_Files_Work, gridBagConstraints);
 
-        jTabbedPane_Other.addTab(Lang.getInstance().translate("Attached Files"), jPanel_Attached_Files);
+        //if (BlockChain.DEVELOP_USE == true)
+    	jTabbedPane_Message.addTab(Lang.getInstance().translate("Attached Files"), jPanel_Attached_Files);
 
         jPanel_Other_Hashes.setLayout(new java.awt.GridBagLayout());
 
@@ -616,7 +639,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(8, 8, 8, 8);
         jPanel_Other_Hashes.add(jButton_Remove_Other_Hashes, gridBagConstraints);
 
-        jTabbedPane_Other.addTab(Lang.getInstance().translate("Hashes"), jPanel_Other_Hashes);
+        jTabbedPane_Message.addTab(Lang.getInstance().translate("Hashes"), jPanel_Other_Hashes);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -627,15 +650,15 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         gridBagConstraints.weightx = 0.1;
         gridBagConstraints.weighty = 0.1;
         gridBagConstraints.insets = new java.awt.Insets(16, 8, 0, 8);
-        add(jTabbedPane_Other, gridBagConstraints);
+ //       add(jTabbedPane_Other, gridBagConstraints);
 
         jPanel_Title.setLayout(new java.awt.GridBagLayout());
 
-        jLabel_Template.setText("Template: ");
+  //     jLabel_Template.setText("Template: ");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(8, 8, 8, 0);
-        jPanel_Title.add(jLabel_Template, gridBagConstraints);
+  //      jPanel_Title.add(jLabel_Template, gridBagConstraints);
 
       
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -646,7 +669,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         gridBagConstraints.weightx = 0.1;
         gridBagConstraints.insets = new java.awt.Insets(8, 8, 8, 8);
-        jPanel_Title.add(jComboBox_Template, gridBagConstraints);
+ //       jPanel_Title.add(jComboBox_Template, gridBagConstraints);
 
         jLabel_Title_Message.setText("Title:");
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -667,14 +690,14 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(8, 8, 8, 8);
         jPanel_Title.add(jTextField_Title_Message, gridBagConstraints);
 
-        jButton_View.setText("View ");
-        jButton_View.setToolTipText("");
+  //      jButton_View.setText("View ");
+  //      jButton_View.setToolTipText("");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(8, 8, 8, 8);
-        jPanel_Title.add(jButton_View, gridBagConstraints);
+   //     jPanel_Title.add(jButton_View, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -714,7 +737,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         jPanel_Work.add(jLabel_Fee_Work, gridBagConstraints);
 
         jTextField_Fee_Work.setText("jTextField2");
-        jTextField_Fee_Work.setMinimumSize(new java.awt.Dimension(120, 20));
+        jTextField_Fee_Work.setMinimumSize(new java.awt.Dimension(0, 20));
         jTextField_Fee_Work.setPreferredSize(new java.awt.Dimension(120, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -766,9 +789,12 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
         add(jPanel_Work, gridBagConstraints);
         jPanel_Work.getAccessibleContext().setAccessibleName("Work");
         jPanel_Work.getAccessibleContext().setAccessibleDescription("");
+        this.setMinimumSize(new Dimension(0,0));
+        
     }// </editor-fold>
     
-	public Pair<Transaction, Integer> makeDeal(boolean asPack)
+	@SuppressWarnings("null")
+	public Integer makeDeal(boolean asPack)
 	{
 		
 		//CHECK IF WALLET UNLOCKED
@@ -789,57 +815,108 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 			}
 		}
 		
-		Pair<Transaction, Integer> result;
-
+		
 		//READ SENDER
 		Account sender = (Account) this.jComboBox_Account_Work.getSelectedItem();
-			
 		int feePow = 0;
-		String message = null;
+		String message = "";
 		boolean isTextB = true;
 		byte[] messageBytes;
+		byte[] fileData;
 		long key = 0;
 		byte[] isTextByte;
 		byte[] encrypted;
-		
+		HashMap  params_Map = new HashMap();
+		HashMap  out_Map = new HashMap();
+		HashMap hashes_Map = new HashMap();
 		int parsing = 0;
+		Integer result =0;
 		try
 		{
+			
+			
 			//READ AMOUNT
 			parsing = 1;
 			
 			//READ FEE
 			parsing = 2;
-			feePow = Integer.parseInt(this.jTextField_Fee_Work.getText());			
+			feePow = Integer.parseInt(this.jTextField_Fee_Work.getText());		
+			Set<Entry<String, String>> param_keys = this.fill_Template_Panel.get_Params().entrySet();
+
+			if (this.fill_Template_Panel.sel_note !=null){
+// template params
+			out_Map.put("TM", fill_Template_Panel.sel_note.getKey()+"");
 			
-			message = this.jTextPane_Message_Public.getText();
+			for (Entry<String, String> key1:param_keys){
+			message += key1.getKey() + " = " + key1.getValue() + "  \n"; // for MarkDown need "  "
+			params_Map.put( key1.getKey(), key1.getValue());
+			}
 			
-			isTextB = this.jCheckBox_Message_Public.isSelected();
-						
-			if ( isTextB )
-			{
-				messageBytes = message.getBytes( Charset.forName("UTF-8") );
 			}
-			else
-			{
-				try
-				{
-					messageBytes = Converter.parseHexString( message );
-				}
-				catch (Exception g)
-				{
-					try
-					{
-						messageBytes = Base58.decode(message);
-					}
-					catch (Exception e)
-					{
-						JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate("Message format is not base58 or hex!"), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
-						
-					}
-					return null;
-				}
+			if (params_Map.size()>0) out_Map.put("PR", params_Map);
+// hashes			
+			
+			int hR = hashes_Table_Model.getRowCount();
+			for (int i = 0;i<hR;i++){
+				hashes_Map.put(hashes_Table_Model.getValueAt(i, 0),hashes_Table_Model.getValueAt(i, 1));
+				
 			}
+			if (hashes_Map.size()>0) out_Map.put("HS", hashes_Map);
+			
+			
+			
+			if (this.jTextPane_Message_Private.getDocument().getLength()>0)
+				out_Map.put("MS", this.jTextPane_Message_Private.getDocument().getText(0, this.jTextPane_Message_Private.getDocument().getLength()));
+		
+// files	
+			HashMap out_Files = new HashMap();
+		//	HashMap out_Files_data = new HashMap();
+			 HashMap<String,Tuple2<Boolean,byte[]>>files_1 = new  HashMap<String,Tuple2<Boolean,byte[]>>();
+			int oF = attached_Files_Model.getRowCount();
+			for (int i=0; i<oF; i++){
+				/*
+				  взять имя файлов 					attached_Files_Model.getValueAt(row,0);
+				  взять признак орхивирования		attached_Files_Model.getValueAt(row,2);
+				  взять содержимое файлов. Если ZIP то зашифрованный, если нет то не зашифрованный 		attached_Files_Model.getValueAt(row,5);
+				*/
+				HashMap file_Attr = new HashMap();
+				file_Attr.put("Name", attached_Files_Model.getValueAt(i,0));
+				file_Attr.put("zip", attached_Files_Model.getValueAt(i,2));
+				byte[] ss = (byte[]) attached_Files_Model.getValueAt(i,5);
+				file_Attr.put("Data",Base64.encodeBase64String(ss));
+				out_Files.put(i, file_Attr);
+				files_1.put( (String)attached_Files_Model.getValueAt(i,0), new Tuple2(attached_Files_Model.getValueAt(i,2),(byte[]) attached_Files_Model.getValueAt(i,5)));
+				// files data
+				//HashMap file_Attr_data = new HashMap();
+				//file_Attr_data.put("Name", attached_Files_Model.getValueAt(i,0));
+				//file_Attr_data.put("zip", attached_Files_Model.getValueAt(i,2));
+				//file_Attr_data.put("Data",Base64.encodeBase64String(ss));
+				//out_Files_data.put(i, file_Attr_data);
+			}
+		//	out_Map.put("Files", out_Files);
+	//		message += this.jTextPane_Message_Public.getText();
+			
+	//		isTextB = this.jCheckBox_Message_Public.isSelected();
+						
+			
+	//		messageBytes = message.getBytes( Charset.forName("UTF-8") );
+			
+			 String sS = StrJSonFine.convert(out_Map);
+			 messageBytes =	 StrJSonFine.convert(out_Map).getBytes( Charset.forName("UTF-8") );
+		//	fileData = StrJSonFine.convert(out_Files_data).getBytes( Charset.forName("UTF-8") );
+			
+			 messageBytes = R_SignNote.Json_Files_to_Byte_V2(jTextField_Title_Message.getText(), new JSONObject(out_Map), files_1);
+			
+			
+			
+			
+			//String jSons = StrJSonFine.convert(output);
+			//byte[] mess = jSons.getBytes( Charset.forName("UTF-8") );
+			
+			
+			
+			
+			
 			if ( messageBytes.length < 10 || messageBytes.length > BlockChain.MAX_REC_DATA_BYTES )
 			{
 				JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate("Message size exceeded! 10...MAX"), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
@@ -851,14 +928,15 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 
 			isTextByte = (isTextB)? new byte[] {1}:new byte[]{0};
 
-		//	boolean encryptMessage = this.encrypted.isSelected();			
-		//	encrypted = (encryptMessage)?new byte[]{1}:new byte[]{0};
+			boolean encryptMessage = this.fill_Template_Panel.jCheckBox_Is_Encripted.isSelected();			
+			encrypted = (encryptMessage)?new byte[]{1}:new byte[]{0};
 			
 			//READ NOTE
 			parsing = 5;
 			//CHECK IF PAYMENT OR ASSET TRANSFER
-			NoteCls note = (NoteCls) this.jComboBox_Template.getSelectedItem();
-			key = note.getKey(); 
+			NoteCls note = (NoteCls) this.fill_Template_Panel.jComboBox_Template.getSelectedItem();
+			if (note != null) key = note.getKey(); 
+			
 
 		}
 		catch(Exception e)
@@ -885,17 +963,60 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 		}
 
 		//CREATE TX MESSAGE
-		result = Controller.getInstance().signNote(asPack,
+		byte version = (byte)2;
+		byte property1 = (byte)0;
+		byte property2 = (byte)0;
+		
+		R_SignNote issueDoc = (R_SignNote) Controller.getInstance().r_SignNote(
+				version, property1, property2,
+				asPack,
 				Controller.getInstance().getPrivateKeyAccountByAddress(sender.getAddress()),
-				feePow, key, messageBytes, isTextByte, null);//encrypted);
+				feePow, key, messageBytes,new byte[]{1}, encrypted);
+		
+		//Issue_Asset_Confirm_Dialog cont = new Issue_Asset_Confirm_Dialog(issueAssetTransaction);
+		 String text = "<HTML><body>";
+		 	text += Lang.getInstance().translate("Confirmation Transaction") + ":&nbsp;"  + Lang.getInstance().translate("Issue Asset") + "<br><br><br>";
+		    text += Lang.getInstance().translate("Creator") +":&nbsp;"  + issueDoc.getCreator() +"<br>";
+		//    text += Lang.getInstance().translate("Name") +":&nbsp;"+ issueDoc.getItem().getName() +"<br>";
+		//    text += Lang.getInstance().translate("Quantity") +":&nbsp;"+ ((AssetCls)issueAssetTransaction.getItem()).getQuantity().toString()+"<br>";
+		//    text += Lang.getInstance().translate("Movable") +":&nbsp;"+ Lang.getInstance().translate(((AssetCls)issueAssetTransaction.getItem()).isMovable()+"")+ "<br>";
+		//    text += Lang.getInstance().translate("Divisible") +":&nbsp;"+ Lang.getInstance().translate(((AssetCls)issueAssetTransaction.getItem()).isDivisible()+"")+ "<br>";
+		//    text += Lang.getInstance().translate("Scale") +":&nbsp;"+ ((AssetCls)issueAssetTransaction.getItem()).getScale()+ "<br>";
+		//    text += Lang.getInstance().translate("Description")+":<br>"+ library.to_HTML(issueAssetTransaction.getItem().getDescription())+"<br>";
+		    String Status_text = "<HTML>"+ Lang.getInstance().translate("Size")+":&nbsp;"+ issueDoc.viewSize(true)+" Bytes, ";
+		    Status_text += "<b>" +Lang.getInstance().translate("Fee")+":&nbsp;"+ issueDoc.getFee().toString()+" COMPU</b><br></body></HTML>";
+		    
+	//	  System.out.print("\n"+ text +"\n");
+	//	    UIManager.put("OptionPane.cancelButtonText", "Отмена");
+	//	    UIManager.put("OptionPane.okButtonText", "Готово");
+		
+	//	int s = JOptionPane.showConfirmDialog(MainFrame.getInstance(), text, Lang.getInstance().translate("Issue Asset"),  JOptionPane.YES_NO_OPTION);
+		
+		Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(MainFrame.getInstance(), true,text, (int) (th.getWidth()/1.2), (int) (th.getHeight()/1.2),Status_text);
+		dd.setLocationRelativeTo(th);
+		dd.setVisible(true);
+		
+	//	JOptionPane.OK_OPTION
+		if (dd.isConfirm){ //s!= JOptionPane.OK_OPTION)	{
+			
+						
+		//VALIDATE AND PROCESS
+		result = Controller.getInstance().getTransactionCreator().afterCreate(issueDoc, asPack);
+		
+		
+		
+		}
+		
 		
 		//CHECK VALIDATE MESSAGE
-		if (result.getB() == Transaction.VALIDATE_OK) {
+		if (result == Transaction.VALIDATE_OK) {
 			return result;
 		} else {		
-			JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(OnDealClick.resultMess(result.getB())), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(OnDealClick.resultMess(result)), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
 			return null;
 		}
+		
+		
 		
 	}
 
@@ -903,7 +1024,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 	{
 		this.jButton_Work_OK.setEnabled(false);
 		this.jButton_Work_OK1.setEnabled(false);
-		Pair<Transaction, Integer> result = makeDeal(false);
+		Integer result = makeDeal(false);
 		if (result != null) {
 			JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate("Statement has been sent!"), Lang.getInstance().translate("Success"), JOptionPane.INFORMATION_MESSAGE);
 		}
@@ -912,15 +1033,16 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 	}
 	public void onPackClick()
 	{
-		this.jButton_Work_OK.setEnabled(false);
+	/*	this.jButton_Work_OK.setEnabled(false);
 		this.jButton_Work_OK1.setEnabled(false);
-		Pair<Transaction, Integer> result = makeDeal(true);
+		 Integer result = makeDeal(true);
 		if (result != null) {
-			this.jCheckBox_Message_Public.setText( Base58.encode(result.getA().toBytes(true, null)));
+			this.jCheckBox_Message_Public.setText( Base58.encode(result.toBytes(true, null)));
 		}
 		
 		this.jButton_Work_OK.setEnabled(false);
 		this.jButton_Work_OK1.setEnabled(false);
+		*/
 	}
 
     
@@ -1119,7 +1241,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 					}
 
 					
-					attached_Files_Model.addRow(new Object[] {patch.getName().toString(), patch.getPath().substring(0, patch.getPath().length()-patch.getName().length()), new Boolean(false), new Integer(fileInArray.length), fileInArray, null});
+					attached_Files_Model.addRow(new Object[] {patch.getName().toString(), patch.getPath().substring(0, patch.getPath().length()-patch.getName().length()), new Boolean(false), new Integer(fileInArray.length), fileInArray, fileInArray});
 			
 
 				}
@@ -1143,7 +1265,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
     private MButton jButton_Clear;
     private MButton jButton_Remove_Attached_Files;
     private MButton jButton_Remove_Other_Hashes;
-    private MButton jButton_View;
+ //   private MButton jButton_View;
     private MButton jButton_Work_Cancel;
     private MButton jButton_Work_OK;
     private MButton jButton_Work_OK1;
@@ -1151,13 +1273,13 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
     private javax.swing.JCheckBox jCheckBox_Message_Private;
     private javax.swing.JCheckBox jCheckBox_Message_Public;
     private javax.swing.JComboBox jComboBox_Account_Work;
-    private javax.swing.JComboBox jComboBox_Template;
+ //   private javax.swing.JComboBox jComboBox_Template;
     private javax.swing.JLabel jLabel_Account_Work;
     private javax.swing.JLabel jLabel_Fee_Work;
-    private javax.swing.JLabel jLabel_Template;
+ //   private javax.swing.JLabel jLabel_Template;
     private javax.swing.JLabel jLabel_Title_Message;
     private javax.swing.JPanel jPanel_Attached_Files;
-    private javax.swing.JPanel jPanel_Message_Private;
+    private javax.swing.JPanel jPanel_Message;
     private javax.swing.JPanel jPanel_Message_Public;
     private javax.swing.JPanel jPanel_Other_Attached_Files_Work;
     private javax.swing.JPanel jPanel_Other_Hashes;
@@ -1165,7 +1287,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel_Work;
     private javax.swing.JScrollPane jScrollPane_Attached_Files_Table;
     private javax.swing.JScrollPane jScrollPane_Hashes_Files_Tale;
-    private javax.swing.JScrollPane jScrollPane_Message_Private_TextPane;
+    private javax.swing.JScrollPane jScrollPane_Message_TextPane;
     private javax.swing.JScrollPane jScrollPane_Message_Public_TextPane;
     private javax.swing.JScrollPane jScrollPane_Params_Template_Public_TextPane;
     private javax.swing.JTabbedPane jTabbedPane_Message;

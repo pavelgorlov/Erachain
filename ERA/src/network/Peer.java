@@ -4,16 +4,20 @@ import java.io.DataInputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
  import org.apache.log4j.Logger;
+import org.mapdb.Fun.Tuple2;
 
 import controller.Controller;
+import core.transaction.Transaction;
 import database.DBSet;
 import lang.Lang;
 import network.message.Message;
@@ -23,6 +27,7 @@ import settings.Settings;
 
 public class Peer extends Thread{
 
+	private final static boolean need_wait = false;
 	private InetAddress address;
 	private ConnectionCallback callback;
 	private Socket socket;
@@ -61,7 +66,7 @@ public class Peer extends Thread{
 			//this.socket.setKeepAlive(true);
 			
 			//TIMEOUT
-			this.socket.setSoTimeout(1000*60*60);
+			this.socket.setSoTimeout(Settings.getInstance().getConnectionTimeout());
 			
 			//CREATE STRINGWRITER
 			this.out = socket.getOutputStream();
@@ -109,7 +114,7 @@ public class Peer extends Thread{
 			//this.socket.setKeepAlive(true);
 			
 			//TIMEOUT
-			this.socket.setSoTimeout(1000*60*60);
+			this.socket.setSoTimeout(Settings.getInstance().getConnectionTimeout());
 			
 			//CREATE STRINGWRITER
 			this.out = socket.getOutputStream();
@@ -199,7 +204,7 @@ public class Peer extends Thread{
 			
 			//TIMEOUT
 			steep++;
-			this.socket.setSoTimeout(1000*60*60);
+			this.socket.setSoTimeout(Settings.getInstance().getConnectionTimeout());
 			
 			//CREATE STRINGWRITER
 			steep++;
@@ -222,13 +227,19 @@ public class Peer extends Thread{
 			}
 
 			this.runed = true;
+			
+			// BROADCAST UNCONFIRMED TRANSACTIONS to PEER
+			List<Transaction> transactions = Controller.getInstance().getUnconfirmedTransactions();
+			if (transactions != null && !transactions.isEmpty())
+				this.callback.broadcastUnconfirmedToPeer(transactions, this);
+
 		}
 		catch(Exception e)
 		{
 			//FAILED TO CONNECT NO NEED TO BLACKLIST
 			if (steep != 1) {
-				//LOGGER.error(e.getMessage(), e);
-				//LOGGER.info("Failed to connect to : " + address + " on steep: " + steep);
+				LOGGER.error(e.getMessage(), e);
+				LOGGER.info("Failed to connect to : " + address + " on steep: " + steep);
 			}
 		}
 	}
@@ -242,18 +253,18 @@ public class Peer extends Thread{
 		while(true)
 		{
 
+			try {
+				Thread.sleep(10);
+			}
+			catch (Exception e) {		
+			}
+
 			// CHECK connection
 			if (socket == null || !socket.isConnected() || socket.isClosed()
 					|| !runed
 					) {
 				
-				in = null;
-				
-				try {
-					Thread.sleep(50);
-				}
-				catch (Exception e) {		
-				}
+				in = null;				
 				continue;
 			}
 			
@@ -269,12 +280,6 @@ public class Peer extends Thread{
 					
 					//DISCONNECT
 					callback.tryDisconnect(this, 0, null);
-					try {
-						Thread.sleep(10);
-					}
-					catch (Exception e1) {
-						
-					}
 					continue;
 				}
 			}
@@ -287,11 +292,6 @@ public class Peer extends Thread{
 				if (in.available()>0) {
 					in.readFully(messageMagic);
 				} else {
-					try {
-						Thread.sleep(10);
-					}
-					catch (Exception e) {
-					}
 					continue;
 				}
 			} 
@@ -301,12 +301,6 @@ public class Peer extends Thread{
 				
 				// DISCONNECT and BAN
 				callback.tryDisconnect(this, 0, "readFully wrong - " + e.getMessage());
-				try {
-					Thread.sleep(10);
-				}
-				catch (Exception e1) {
-					
-				}
 				continue;
 			}
 			
@@ -323,13 +317,7 @@ public class Peer extends Thread{
 					//LOGGER.error(e.getMessage(), e);
 					
 					//DISCONNECT and BAN
-					callback.tryDisconnect(this, 600, "parse message wrong - " + e.getMessage());
-					try {
-						Thread.sleep(10);
-					}
-					catch (Exception e1) {
-						
-					}
+					callback.tryDisconnect(this, 60, "parse message wrong - " + e.getMessage());
 					continue;
 				}
 				
@@ -355,12 +343,6 @@ public class Peer extends Thread{
 						LOGGER.debug(e.getMessage(), e);
 						//DISCONNECT
 						callback.tryDisconnect(this, 10, e.getMessage());
-						try {
-							Thread.sleep(10);
-						}
-						catch (Exception e1) {
-							
-						}
 						continue;
 					}
 				}
@@ -369,12 +351,6 @@ public class Peer extends Thread{
 			{
 				//ERROR and BAN
 				callback.tryDisconnect(this, 3600, "received message with wrong magic");
-				try {
-					Thread.sleep(10);
-				}
-				catch (Exception e) {
-					
-				}
 				continue;
 			}
 		}

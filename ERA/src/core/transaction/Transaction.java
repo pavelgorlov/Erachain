@@ -191,6 +191,7 @@ public abstract class Transaction {
 	public static final int HOLD_ASSET_TRANSACTION = 33; // not in gui
 	
 	// OTHER
+	public static final int SIGN_NOTE2_TRANSACTION = 34;
 	public static final int SIGN_NOTE_TRANSACTION = 35;
 	public static final int CERTIFY_PUB_KEYS_TRANSACTION = 36;
 	public static final int SET_STATUS_TO_ITEM_TRANSACTION = 37;
@@ -286,6 +287,10 @@ public abstract class Transaction {
 	protected static final int SIMPLE_TYPE_LENGTH = 1;
 	protected static final int TYPE_LENGTH = 4;
 	protected static final int HEIGHT_LENGTH = 4;
+	protected static final int DATA_JSON_PART_LENGTH = 4;
+	protected static final int DATA_VERSION_PART_LENGTH = 6;
+	protected static final int DATA_TITLE_PART_LENGTH = 4;
+	protected static final int DATA_NUM_FILE_LENGTH = 4;
 	protected static final int SEQ_LENGTH = 4;
 	//protected static final int PROP_LENGTH = 2; // properties
 	public static final int TIMESTAMP_LENGTH = 8;
@@ -731,12 +736,15 @@ public abstract class Transaction {
 		transaction.put("type", Byte.toUnsignedInt(this.typeBytes[0]));
 		transaction.put("record_type", this.viewTypeName());
 		transaction.put("confirmations", this.getConfirmations(DBSet.getInstance()));
+		int height;
 		if (this.creator == null )
 		{
 			transaction.put("creator", "genesis");
 			transaction.put("reference", "genesis");
 			transaction.put("signature", "genesis");
+			height = 1;
 		} else {
+			height = this.getBlockHeight(DBSet.getInstance());
 			transaction.put("reference", this.reference==null?"null":"" + this.reference);
 			transaction.put("signature", this.signature==null?"null":Base58.encode(this.signature));
 			transaction.put("fee", this.fee.toPlainString());
@@ -746,6 +754,10 @@ public abstract class Transaction {
 			transaction.put("property1", Byte.toUnsignedInt(this.typeBytes[2]));
 			transaction.put("property2", Byte.toUnsignedInt(this.typeBytes[3]));
 		}
+		
+		transaction.put("height", height);
+		if (height > 0)
+			transaction.put("sequence", this.getSeqNo(DBSet.getInstance()));
 		
 		return transaction;
 	}
@@ -1057,10 +1069,10 @@ public abstract class Transaction {
 		
 		try
 		{
-		//CHECK IF IN TRANSACTIONDATABASE
+		//CHECK IF IN UNCONFIRMED TRANSACTION
 		if(db.getTransactionMap().contains(this))
 		{
-			return 0;
+			return -db.getTransactionMap().getBroadcasts(this);
 		}
 		
 		//CALCULATE CONFIRMATIONS

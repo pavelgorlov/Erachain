@@ -83,10 +83,11 @@ public class VouchRecordDialog extends JDialog  {
 			this.setResizable(true);
 			this.setModal(true);
 			
-	    setPreferredSize(new Dimension(MainFrame.getInstance().desktopPane.getWidth()-100,MainFrame.getInstance().desktopPane.getHeight()-100));
+//	    setPreferredSize(new Dimension(MainFrame.getInstance().desktopPane.getWidth()-100,MainFrame.getInstance().desktopPane.getHeight()-100));
 		//PACK
 		this.pack();
  //       this.setResizable(false);
+		 this.setSize(MainFrame.getInstance().getWidth()-100, MainFrame.getInstance().getHeight()-100);
         this.setLocationRelativeTo(null);
         this.setVisible(true);
 	    //MainFrame.this.add(comp, constraints).setFocusable(false);
@@ -400,7 +401,7 @@ public class VouchRecordDialog extends JDialog  {
 
 	        
 	        
-	        
+	       
 	        
 	    //    pack();
 	    }// <

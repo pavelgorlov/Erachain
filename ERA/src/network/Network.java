@@ -13,10 +13,13 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 // import org.apache.log4j.Logger;
 import org.apache.log4j.Logger;
-
+import org.mapdb.Fun.Tuple2;
 
 import controller.Controller;
 import core.BlockChain;
+import core.transaction.Transaction;
+import database.DBSet;
+import database.TransactionMap;
 import lang.Lang;
 import network.message.FindMyselfMessage;
 import network.message.Message;
@@ -83,6 +86,9 @@ public class Network extends Observable implements ConnectionCallback {
 		//PASS TO CONTROLLER
 		Controller.getInstance().onConnect(peer);
 		
+		if(Controller.getInstance().isOnStopping())
+			return;
+
 		//NOTIFY OBSERVERS
 		this.setChanged();
 		this.notifyObservers(new ObserverMessage(ObserverMessage.LIST_PEER_TYPE, peer));		
@@ -348,6 +354,10 @@ public class Network extends Observable implements ConnectionCallback {
 		{
 			for(int i=0; i < this.knownPeers.size() ; i++)
 			{
+				
+				if (!this.run)
+					return;
+				
 				Peer peer = this.knownPeers.get(i);
 				if (!peer.isUsed()) {
 					continue;
@@ -368,7 +378,40 @@ public class Network extends Observable implements ConnectionCallback {
 		
 		//LOGGER.info(Lang.getInstance().translate("Broadcasting end"));
 	}
-	
+
+	public void broadcastUnconfirmedToPeer(List<Transaction> transactions, Peer peer) 
+	{		
+
+		byte[] peerByte = peer.getAddress().getAddress();
+		DBSet dbSet = DBSet.getInstance();
+		TransactionMap dbMap = dbSet.getTransactionMap();
+				
+		for (Transaction transaction: transactions) {
+
+			if (!this.run || !peer.isUsed()) {
+				return;
+			}
+							
+			Message message = MessageFactory.getInstance()
+					.createTransactionMessage(transaction);
+
+			if (dbMap.isBroadcastedToPeer(transaction, peerByte))
+				continue;
+			
+			try
+			{
+				if (peer.sendMessage(message)) {
+					dbMap.addBroadcastedPeer(transaction, peerByte);
+				}
+			} catch(Exception e)
+			{
+				LOGGER.error(e.getMessage(),e);
+			}
+		}
+		
+		LOGGER.info(Lang.getInstance().translate("Broadcasting end"));
+	}
+
 	@Override
 	public void addObserver(Observer o)
 	{

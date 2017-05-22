@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.mapdb.Fun.Tuple2;
+
 import com.google.common.primitives.Bytes;
 
 import controller.Controller;
@@ -73,8 +75,8 @@ public class TransactionCreator
 	private DBSet fork;
 	private Block lastBlock;
 	
-	private byte[] icon = new byte[0]; // default value
-	private byte[] image = new byte[0]; // default value
+	//private byte[] icon = new byte[0]; // default value
+	//private byte[] image = new byte[0]; // default value
 	
 	private void checkUpdate()
 	{
@@ -217,7 +219,7 @@ public class TransactionCreator
 		return new Pair<Transaction, Integer>(namePurchase, this.afterCreate(namePurchase, false));
 	}
 		
-	public Pair<Transaction, Integer> createPollCreation(PrivateKeyAccount creator, Poll poll, int feePow) 
+	public Transaction createPollCreation(PrivateKeyAccount creator, Poll poll, int feePow) 
 	{
 		//CHECK FOR UPDATES
 		this.checkUpdate();
@@ -228,9 +230,9 @@ public class TransactionCreator
 		//CREATE POLL CREATION
 		CreatePollTransaction pollCreation = new CreatePollTransaction(creator, poll, (byte)feePow, time, creator.getLastReference(this.fork));
 		pollCreation.sign(creator, false);
-						
-		//VALIDATE AND PROCESS
-		return new Pair<Transaction, Integer>(pollCreation, this.afterCreate(pollCreation, false));
+		
+		return pollCreation;
+		
 	}
 	
 
@@ -269,7 +271,9 @@ public class TransactionCreator
 	}
 	
 	
-	public Transaction createIssueAssetTransaction(PrivateKeyAccount creator, String name, String description, boolean movable, long quantity, byte scale, boolean divisible, int feePow) 
+	public Transaction createIssueAssetTransaction(PrivateKeyAccount creator, String name, String description,
+			byte[] icon, byte[] image,
+			boolean movable, long quantity, byte scale, boolean divisible, int feePow) 
 	{
 		//CHECK FOR UPDATES
 		// all unconfirmed records insert in FORK for calc last account REFERENCE 
@@ -287,7 +291,9 @@ public class TransactionCreator
 		return issueAssetTransaction;
 	}
 
-	public Pair<Transaction, Integer> createIssueImprintTransaction(PrivateKeyAccount creator, String name, String description, int feePow) 
+	public Pair<Transaction, Integer> createIssueImprintTransaction(PrivateKeyAccount creator, String name, String description,
+			byte[] icon, byte[] image,
+			int feePow)
 	{
 		//CHECK FOR UPDATES
 		this.checkUpdate();
@@ -305,7 +311,9 @@ public class TransactionCreator
 		return new Pair<Transaction, Integer>(issueImprintRecord, this.afterCreate(issueImprintRecord, false));
 	}
 
-	public Pair<Transaction, Integer> createIssueNoteTransaction(PrivateKeyAccount creator, String name, String description, int feePow) 
+	public Transaction createIssueNoteTransaction(PrivateKeyAccount creator, String name, String description,
+			byte[] icon, byte[] image,
+			int feePow) 
 	{
 		//CHECK FOR UPDATES
 		this.checkUpdate();
@@ -320,7 +328,7 @@ public class TransactionCreator
 		issueNoteRecord.sign(creator, false);
 										
 		//VALIDATE AND PROCESS
-		return new Pair<Transaction, Integer>(issueNoteRecord, this.afterCreate(issueNoteRecord, false));
+		return issueNoteRecord;
 	}
 
 	public Pair<Transaction, Integer> createIssuePersonTransaction(
@@ -390,7 +398,8 @@ public class TransactionCreator
 		
 	}
 
-	public Pair<Transaction, Integer> createIssueStatusTransaction(PrivateKeyAccount creator, String name, String description,
+	public Transaction createIssueStatusTransaction(PrivateKeyAccount creator, String name, String description,
+			byte[] icon, byte[] image,
 			boolean unique, int feePow) 
 	{
 		//CHECK FOR UPDATES
@@ -405,11 +414,12 @@ public class TransactionCreator
 		IssueStatusRecord issueStatusRecord = new IssueStatusRecord(creator, status, (byte)feePow, time, creator.getLastReference(this.fork));
 		issueStatusRecord.sign(creator, false);
 										
-		//VALIDATE AND PROCESS
-		return new Pair<Transaction, Integer>(issueStatusRecord, this.afterCreate(issueStatusRecord, false));
+		return issueStatusRecord;
 	}
 
-	public Pair<Transaction, Integer> createIssueUnionTransaction(PrivateKeyAccount creator, String name, long birthday, long parent, String description, int feePow) 
+	public Transaction createIssueUnionTransaction(PrivateKeyAccount creator, String name, long birthday, long parent, String description,
+			byte[] icon, byte[] image,
+			int feePow) 
 	{
 		//CHECK FOR UPDATES
 		this.checkUpdate();
@@ -423,8 +433,8 @@ public class TransactionCreator
 		IssueUnionRecord issueUnionRecord = new IssueUnionRecord(creator, union, (byte)feePow, time, creator.getLastReference(this.fork));
 		issueUnionRecord.sign(creator, false);
 										
-		//VALIDATE AND PROCESS
-		return new Pair<Transaction, Integer>(issueUnionRecord, this.afterCreate(issueUnionRecord, false));
+		return issueUnionRecord;
+		
 	}
 
 	public Pair<Transaction, Integer> createOrderTransaction(PrivateKeyAccount creator, AssetCls have, AssetCls want, BigDecimal amountHave, BigDecimal amounWant, int feePow)
@@ -513,7 +523,8 @@ public class TransactionCreator
 		return new Pair<Transaction, Integer>(messageTx, afterCreate(messageTx, false));
 	}
 
-	public Pair<Transaction, Integer> r_Send(byte version, PrivateKeyAccount creator,
+	public Pair<Transaction, Integer> r_Send(byte version, byte property1, byte property2,
+			PrivateKeyAccount creator,
 			Account recipient, long key, BigDecimal amount, int feePow, String head, byte[] isText,
 			byte[] message, byte[] encryptMessage) {
 		
@@ -524,13 +535,14 @@ public class TransactionCreator
 		long timestamp = NTP.getTime();
 		
 		//CREATE MESSAGE TRANSACTION
-		messageTx = new R_Send(version, creator, (byte)feePow, recipient, key, amount, head, message, isText, encryptMessage, timestamp, creator.getLastReference(this.fork));
+		messageTx = new R_Send(version, property1, property2, creator, (byte)feePow, recipient, key, amount, head, message, isText, encryptMessage, timestamp, creator.getLastReference(this.fork));
 		messageTx.sign(creator, false);
 			
 		return new Pair<Transaction, Integer>(messageTx, afterCreate(messageTx, false));
 	}
 	
-	public Pair<Transaction, Integer> signNote(boolean asPack, PrivateKeyAccount creator,
+	public Transaction r_SignNote(byte version, byte property1, byte property2, 
+			boolean asPack, PrivateKeyAccount creator,
 			int feePow, long key, byte[] message, byte[] isText, byte[] encrypted) {
 		
 		this.checkUpdate();
@@ -540,11 +552,11 @@ public class TransactionCreator
 		long timestamp = NTP.getTime();
 		
 		//CREATE MESSAGE TRANSACTION
-		//recordNoteTx = new R_SignNote((byte)0,(byte)0,(byte)0, creator, (byte)feePow, key, message, isText, encrypted, timestamp, creator.getLastReference(this.fork));
-		recordNoteTx = new R_SignNote(creator, (byte)feePow, key, message, isText, encrypted, timestamp, creator.getLastReference(this.fork));
+		recordNoteTx = new R_SignNote(version, property1, property1,
+				creator, (byte)feePow, key, message, isText, encrypted, timestamp, creator.getLastReference(this.fork));
 		recordNoteTx.sign(creator, asPack);
-			
-		return new Pair<Transaction, Integer>(recordNoteTx, afterCreate(recordNoteTx, asPack));
+		return 	recordNoteTx;
+	
 	}
 
 	public Pair<Transaction, Integer> r_SertifyPerson(int version, boolean asPack,

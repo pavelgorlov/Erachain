@@ -81,9 +81,8 @@ public class Statements_Vouch_Table_Model extends AbstractTableModel implements 
 		recNo = transaction.getSeqNo(DBSet.getInstance());
 		transactions = new ArrayList<R_Vouch>();
 		// transactions = read_Sign_Accoutns();
-		DBSet.getInstance().getTransactionFinalMap().addObserver(this);
-		DBSet.getInstance().getTransactionMap().addObserver(this);
-		DBSet.getInstance().getVouchRecordMap().addObserver(this);
+		addObservers();
+		
 
 	}
 
@@ -241,13 +240,19 @@ public class Statements_Vouch_Table_Model extends AbstractTableModel implements 
 			if (this.transactions == null || this.transactions.size() == 0) {
 				transactions = read_Sign_Accoutns();
 				this.fireTableDataChanged();
+			//	Tuple2<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>>(key,value)));
+				
+				
+				
 			}
 		} 
 		
 		if (message.getType() == ObserverMessage.ADD_VOUCH_TYPE) {
 			// CHECK IF NEW LIST
-		
-				transactions = read_Sign_Accoutns();
+			
+				//transactions = read_Sign_Accoutns();
+			Tuple2<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>> a = (Tuple2<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>>) message.getValue();
+				transactions.addAll(add_Trans(a));
 				this.fireTableDataChanged();
 			
 		} 
@@ -319,7 +324,7 @@ public class Statements_Vouch_Table_Model extends AbstractTableModel implements 
 		 */
 
 		@SuppressWarnings("unchecked")
-		SortableList<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>> rec = (SortableList<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>>) message
+		SortableList<Tuple2<Integer, Integer>, Tuple2<BigDecimal,  List<Tuple2<Integer, Integer>>>> rec = (SortableList<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>>) message
 				.getValue();
 
 		Iterator<Pair<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>>> ss = rec
@@ -328,6 +333,32 @@ public class Statements_Vouch_Table_Model extends AbstractTableModel implements 
 			Pair<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>> a = (Pair<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>>) ss
 					.next();
 			// block
+			trans.addAll(add_Trans(a));
+
+		}
+		return trans;
+	}
+	
+	public void addObservers(){
+		
+		DBSet.getInstance().getTransactionFinalMap().addObserver(this);
+		DBSet.getInstance().getTransactionMap().addObserver(this);
+		DBSet.getInstance().getVouchRecordMap().addObserver(this);
+			
+		}
+		
+		
+		public void removeObservers() 
+		{
+			
+			DBSet.getInstance().getTransactionFinalMap().deleteObserver(this);
+			DBSet.getInstance().getTransactionMap().deleteObserver(this);
+			DBSet.getInstance().getVouchRecordMap().deleteObserver(this);
+	
+
+}
+		private List<R_Vouch>  add_Trans(Pair<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>> a){
+			List<R_Vouch> trans = new ArrayList<R_Vouch>();
 			if (a.getA().a == blockNo && a.getA().b == recNo) {
 				List<Tuple2<Integer, Integer>> ff = a.getB().b;
 
@@ -340,9 +371,24 @@ public class Statements_Vouch_Table_Model extends AbstractTableModel implements 
 						trans.add(kk);
 				}
 			}
-
+			
+			return trans;
 		}
-		return trans;
-	}
+		private List<R_Vouch>  add_Trans(Tuple2<Tuple2<Integer, Integer>, Tuple2<BigDecimal, List<Tuple2<Integer, Integer>>>> a){
+			List<R_Vouch> trans = new ArrayList<R_Vouch>();
+			if (a.a.a == blockNo && a.a.b == recNo) {
+				List<Tuple2<Integer, Integer>> ff = a.b.b;
 
+				for (Tuple2<Integer, Integer> ll : ff) {
+					Integer bl = ll.a;
+					Integer seg = ll.b;
+
+					R_Vouch kk = (R_Vouch) table.getTransaction(bl, seg);
+					if (!trans.contains(kk))
+						trans.add(kk);
+				}
+			}
+			
+			return trans;
+		}
 }

@@ -4,11 +4,14 @@ import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.table.AbstractTableModel;
 import javax.validation.constraints.Null;
+
+import org.mapdb.Fun.Tuple2;
 
 import controller.Controller;
 import core.account.Account;

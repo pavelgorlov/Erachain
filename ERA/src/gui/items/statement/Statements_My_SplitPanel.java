@@ -1,15 +1,24 @@
 	package gui.items.statement;
 
-	import java.awt.Dimension;
-	import javax.swing.JTable;
+	import java.awt.Component;
+import java.awt.Dimension;
+import java.util.ArrayList;
+
+import javax.swing.DefaultRowSorter;
+import javax.swing.JTable;
 	import javax.swing.ListSelectionModel;
-	import javax.swing.event.DocumentEvent;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
+import javax.swing.RowSorter.SortKey;
+import javax.swing.event.DocumentEvent;
 	import javax.swing.event.DocumentListener;
 	import javax.swing.event.ListSelectionEvent;
 	import javax.swing.event.ListSelectionListener;
+import javax.swing.table.TableRowSorter;
+
 import core.transaction.Transaction;
-import gui.MainFrame;
 	import gui.Split_Panel;
+import gui.items.mails.Mail_Info;
 import gui.library.MTable;
 	import lang.Lang;
 
@@ -23,9 +32,14 @@ import gui.library.MTable;
 	     int alpha =255;
 	     int alpha_int;
 	     Statements_Table_Model_My my_Statements_Model;
+
+
+
+		private TableRowSorter search_Sorter;
 		
 		
 	public Statements_My_SplitPanel(){
+		super("Statements_My_SplitPanel");
 	
 		this.setName(Lang.getInstance().translate("My Statements"));
 			this.searthLabel_SearchToolBar_LeftPanel.setText(Lang.getInstance().translate("Search") +":  ");
@@ -88,16 +102,23 @@ import gui.library.MTable;
 			//this.jTable_jScrollPanel_LeftPanel.setModel(my_PersonsModel);
 			this.jTable_jScrollPanel_LeftPanel = new MTable(my_Statements_Model); //my_Statements_table;
 			//this.jTable_jScrollPanel_LeftPanel.setTableHeader(null);
-	
+			// sorter
+			search_Sorter = new TableRowSorter(my_Statements_Model);
+			ArrayList<SortKey> keys = new ArrayList<RowSorter.SortKey>();
+			keys.add(new RowSorter.SortKey(0, SortOrder.DESCENDING));
+			keys.add(new RowSorter.SortKey(0, SortOrder.DESCENDING)); 
+			search_Sorter.setSortKeys(keys);
+			((DefaultRowSorter<?, ?>) search_Sorter).setSortsOnUpdates(true);
+			this.jTable_jScrollPanel_LeftPanel.setRowSorter(search_Sorter);
 			this.jTable_jScrollPanel_LeftPanel.setEditingColumn(0);
 			this.jTable_jScrollPanel_LeftPanel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			this.jTable_jScrollPanel_LeftPanel.setAutoCreateRowSorter(true);
 			this.jScrollPanel_LeftPanel.setViewportView(this.jTable_jScrollPanel_LeftPanel);		
 		// EVENTS on CURSOR
 			this.jTable_jScrollPanel_LeftPanel.getSelectionModel().addListSelectionListener(new My_Tab_Listener());
-			 Dimension size = MainFrame.getInstance().desktopPane.getSize();
-			 this.setSize(new Dimension((int)size.getWidth()-100,(int)size.getHeight()-100));
-			 jSplitPanel.setDividerLocation((int)(size.getWidth()/1.618));
+//			 Dimension size = MainFrame.getInstance().desktopPane.getSize();
+//			 this.setSize(new Dimension((int)size.getWidth()-100,(int)size.getHeight()-100));
+			// jSplitPanel.setDividerLocation((int)(size.getWidth()/1.618));
 	}
 	// set favorine My
 		void favorite_my(JTable table){
@@ -119,6 +140,7 @@ import gui.library.MTable;
 				Statement_Info info_panel = new Statement_Info(statement);
 				info_panel.setPreferredSize(new Dimension(jScrollPane_jPanel_RightPanel.getSize().width-50,jScrollPane_jPanel_RightPanel.getSize().height-50));
 				jScrollPane_jPanel_RightPanel.setViewportView(info_panel);
+			//	jSplitPanel.setRightComponent(info_panel);
 			}
 			
 		}
@@ -141,7 +163,16 @@ import gui.library.MTable;
 			}
 		}
 		
-		
+		@Override
+		public void delay_on_close(){
+			// delete observer left panel
+			my_Statements_Model.removeObservers();
+			// get component from right panel
+			Component c1 = jScrollPane_jPanel_RightPanel.getViewport().getView();
+			// if Person_Info 002 delay on close
+			  if (c1 instanceof Statement_Info) ( (Statement_Info)c1).delay_on_Close();
+			
+		}
 	
 	}
 

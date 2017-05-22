@@ -85,7 +85,7 @@ import utils.APIUtils;
 import utils.Converter;
 import utils.Pair;
 
-@Path("/")
+@Path("lightwallet")
 public class LightWallet {
 	
 	@Context
@@ -95,7 +95,6 @@ public class LightWallet {
 	private static final Logger LOGGER = Logger
 			.getLogger(LightWallet.class);
 
-	/*
 	@GET
 	public Response Default() {
 
@@ -103,12 +102,11 @@ public class LightWallet {
 		return Response.status(302).header("Location", "lightwallet/main.html")
 				.build();
 	}
-	*/
 
 	/*@GET here defines, this method will process HTTP GET requests. */
 
 	@GET
-	@Path("lightwallet/test/")
+	@Path("test")
 	public String test()
 	{
 		String text = "";
@@ -261,7 +259,7 @@ public class LightWallet {
 		///int port = Controller.getInstance().getNetworkPort();
 		///data = Bytes.concat(data, Ints.toByteArray(port));
 
-		return toBytes(record_type, version, feePow, timestamp, creator, reference, queryParameters);
+		return toBytes(record_type, version, 0, 0, feePow, timestamp, creator, reference, queryParameters);
 
 	}
 
@@ -285,11 +283,37 @@ public class LightWallet {
 		// see http://ru.tmsoftstudio.com/file/page/web-services-java/javax_ws_rs_core.html
 		MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
 		
-		return toBytes(record_type,	version, feePow, timestamp, creator, reference, queryParameters);
+		return toBytes(record_type,	version, 0, 0, feePow, timestamp, creator, reference, queryParameters);
 
 	}
 
-	public static String toBytes(int record_type,	int version, int feePow, long timestamp, String creator, long reference,
+	@GET
+	@Path("lightwallet/getraw/{type}/{version}/{property1}/{property2}/{creator}/{timestamp}/{feePow}/{reference}/")
+	// http://127.0.0.1:9047/lightwallet/getraw/31/0/5mgpEGqUGpfme4W2tHJmG7Ew21Te2zNY7Ju3e9JfUmRF/0/2?amount=12.12345678
+	public String getRaw(@PathParam("type") int record_type,
+			@PathParam("version") int version,
+			@PathParam("property1") int property1,
+			@PathParam("property2") int property2,
+			@PathParam("creator") String creator,
+			@PathParam("timestamp") long timestamp,
+			@PathParam("feePow") int feePow,
+			@PathParam("reference") long reference
+			)
+	{
+
+		if (uriInfo == null) {
+			return APIUtils.errorMess(ApiErrorFactory.ERROR_JSON, ApiErrorFactory.getInstance().createError(
+					ApiErrorFactory.ERROR_JSON).toString());
+		}
+		
+		// see http://ru.tmsoftstudio.com/file/page/web-services-java/javax_ws_rs_core.html
+		MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+		
+		return toBytes(record_type,	version, property1, property2, feePow, timestamp, creator, reference, queryParameters);
+
+	}
+
+	public static String toBytes(int record_type, int version, int property1, int property2, int feePow, long timestamp, String creator, long reference,
 			MultivaluedMap<String, String> queryParameters) // throws JSONException
 	{
 
@@ -456,7 +480,8 @@ public class LightWallet {
 					//LOGGER.info(e1);
 					return APIUtils.errorMess(-steep, e1.toString() + " on steep: " + steep);
 				} 
-				record = new R_Send((byte)version, creatorPK,
+				record = new R_Send((byte)version, (byte)property1, (byte)property2,
+						creatorPK,
 						(byte)feePow, recipient, key, amount, head,
 						data, isText, encryptMessage, timestamp, reference);
 					

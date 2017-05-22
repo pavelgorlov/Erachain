@@ -35,6 +35,8 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.RowFilter;
 import javax.swing.RowSorter;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -52,9 +54,7 @@ import core.item.assets.AssetCls;
 import core.item.persons.PersonCls;
 import core.transaction.Transaction;
 import database.DBSet;
-import gui.MainFrame;
 import gui.Main_Internal_Frame;
-import gui.RunMenu;
 import gui.Split_Panel;
 import gui.items.accounts.Account_Send_Dialog;
 import gui.items.assets.IssueAssetPanel;
@@ -84,14 +84,18 @@ public class Persons_Search_SplitPanel extends Split_Panel{
      int alpha =255;
      int alpha_int;
 	public Persons_Search_SplitPanel(){
+		super("Persons_Search_SplitPanel");
 		setName(Lang.getInstance().translate("Search Persons"));
 		searthLabel_SearchToolBar_LeftPanel.setText(Lang.getInstance().translate("Search") +":  ");
 	// not show buttons
 		jToolBar_RightPanel.setVisible(false);
 		toolBar_LeftPanel.setVisible(false);
+		
+		this.searchToolBar_LeftPanel.setVisible(true);
 // not show My filter
 		searth_My_JCheckBox_LeftPanel.setVisible(false);
-		
+		searth_Favorite_JCheckBox_LeftPanel.setVisible(false);
+	
 //CREATE TABLE
 		search_Table_Model = new TableModelPersons();
 		search_Table = new MTable(this.search_Table_Model);
@@ -121,6 +125,30 @@ public class Persons_Search_SplitPanel extends Split_Panel{
 // Event LISTENER		
 		jTable_jScrollPanel_LeftPanel.getSelectionModel().addListSelectionListener(new search_listener());
 	
+		
+		this.addAncestorListener(new AncestorListener(){
+
+			@Override
+			public void ancestorAdded(AncestorEvent arg0) {
+				// TODO Auto-generated method stub
+				search_Table_Model.addObservers();
+			}
+
+			@Override
+			public void ancestorMoved(AncestorEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void ancestorRemoved(AncestorEvent arg0) {
+				// TODO Auto-generated method stub
+				search_Table_Model.removeObservers();
+			}
+			
+			
+			
+		});
 		
 		JPopupMenu menu = new JPopupMenu();
 
@@ -207,8 +235,9 @@ public class Persons_Search_SplitPanel extends Split_Panel{
 	//			search_Table_Model.getSortableList().setFilter(".*" + search + ".*");
 	//			search_Table_Model.fireTableDataChanged();
 				
-				RowFilter filter = RowFilter.regexFilter(".*" + search + ".*", 1);
-				((DefaultRowSorter) search_Sorter).setRowFilter(filter);
+				search_Table_Model.set_Filter_By_Name(search);
+	//			RowFilter filter = RowFilter.regexFilter(".*" + search + ".*", 1);
+	//			((DefaultRowSorter) search_Sorter).setRowFilter(filter);
 				
 				search_Table_Model.fireTableDataChanged();
 				
@@ -229,5 +258,15 @@ public class Persons_Search_SplitPanel extends Split_Panel{
 			}
 		}
 
+	 @Override
+		public void delay_on_close(){
+			// delete observer left panel
+		 search_Table_Model.removeObservers();
+			// get component from right panel
+			Component c1 = jScrollPane_jPanel_RightPanel.getViewport().getView();
+			// if Person_Info 002 delay on close
+			  if (c1 instanceof Person_Info_002) ( (Person_Info_002)c1).delay_on_Close();
+			
+		}
 
 }

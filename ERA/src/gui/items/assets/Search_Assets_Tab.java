@@ -1,5 +1,6 @@
 package gui.items.assets;
 
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -38,6 +39,8 @@ import javax.swing.RowSorter;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.TableColumn;
@@ -47,12 +50,13 @@ import org.json.simple.JSONObject;
 
 import controller.Controller;
 import core.item.assets.AssetCls;
+import core.item.persons.PersonCls;
 import core.transaction.Transaction;
 import database.DBSet;
 import database.Issue_ItemMap;
 import gui.CoreRowSorter;
 import gui.Split_Panel;
-import gui.Table_Formats;
+import gui.items.persons.Person_Info_002;
 import gui.items.unions.TableModelUnions;
 import gui.library.MTable;
 import gui.models.Renderer_Boolean;
@@ -65,11 +69,12 @@ import lang.Lang;
 public class Search_Assets_Tab extends Split_Panel {
 	private TableModelItemAssets tableModelItemAssets;
 	final MTable assetsTable;
+	private Search_Assets_Tab th;
 	
 	
 	public Search_Assets_Tab(){
-		
-		
+		super("Search_Assets_Tab");
+		th =this;
 		setName(Lang.getInstance().translate("Search Assets"));
 		searthLabel_SearchToolBar_LeftPanel.setText(Lang.getInstance().translate("Search") +":  ");
 		// not show buttons
@@ -162,12 +167,7 @@ public class Search_Assets_Tab extends Split_Panel {
 		jScrollPanel_LeftPanel.setViewportView(jTable_jScrollPanel_LeftPanel);
 		
 	
-		
-// изменение высоты строки при изменении ширины  
-		
-	//	this.setRowHeightFormat(true);
-	  
-		
+		jTable_jScrollPanel_LeftPanel.getSelectionModel().addListSelectionListener(new search_listener());
 		
 		
 		
@@ -409,9 +409,6 @@ public class Search_Assets_Tab extends Split_Panel {
 	
 }
 
-public void removeObservers() {
-	this.tableModelItemAssets.removeObservers();
-}
 
 public void favorite_set(JTable assetsTable){
 
@@ -441,4 +438,33 @@ if(asset.getKey() >= AssetCls.INITIAL_FAVORITES)
 
 }
 }
+// listener select row	 
+class search_listener implements ListSelectionListener  {
+		@Override
+		public void valueChanged(ListSelectionEvent arg0) {
+			AssetCls asset = null;
+			if (assetsTable.getSelectedRow() >= 0 ) asset = tableModelItemAssets.getAsset(assetsTable.convertRowIndexToModel(assetsTable.getSelectedRow()));
+			if (asset == null) return;
+			int div = th.jSplitPanel.getDividerLocation();
+			int or = th.jSplitPanel.getOrientation();
+			Asset_Detail_Panel_003 info_panel = new Asset_Detail_Panel_003(asset);
+				//info_panel.setPreferredSize(new Dimension(jScrollPane_jPanel_RightPanel.getSize().width-50,jScrollPane_jPanel_RightPanel.getSize().height-50));
+				jScrollPane_jPanel_RightPanel.setViewportView(info_panel);
+				//jSplitPanel.setRightComponent(info_panel);
+				jSplitPanel.setDividerLocation(div);
+				jSplitPanel.setOrientation(or);
+		}
+	}
+
+@Override
+public void delay_on_close(){
+	// delete observer left panel
+	tableModelItemAssets.removeObservers();
+	// get component from right panel
+	Component c1 = jScrollPane_jPanel_RightPanel.getViewport().getView();
+	// if Person_Info 002 delay on close
+	//  if (c1 instanceof AssetDetailsPanel001) ( (AssetDetailsPanel001)c1).delay_on_Close();
+	
+}
+
 }

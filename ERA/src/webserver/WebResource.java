@@ -51,6 +51,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.mapdb.Fun.Tuple2;
 
 import com.google.common.base.Charsets;
 import com.mitchellbosecke.pebble.error.PebbleException;

@@ -57,7 +57,6 @@ import controller.Controller;
 import core.item.ItemCls;
 import core.item.assets.AssetCls;
 import gui.MainFrame;
-import gui.Table_Formats;
 import gui.library.MTable;
 import gui.models.Renderer_Boolean;
 import gui.models.Renderer_Left;
@@ -290,14 +289,16 @@ public class AssetPairSelect extends JDialog{
 	    
 	    
 	    
-	    Dimension size = MainFrame.getInstance().desktopPane.getSize();
-	    pair_Panel.jSplitPanel.setDividerLocation((int)(size.width/2.5));
+	//    Dimension size = MainFrame.getInstance().desktopPane.getSize();
+	//    pair_Panel.jSplitPanel.setDividerLocation((int)(size.width/2.5));
 	    this.add(pair_Panel, labelGBC);
 		//PACK
 		this.pack();
-		this.setSize( size.width-(size.width/8), size.height-(size.width/8));
+	//	this.setSize( size.width-(size.width/8), size.height-(size.width/8));
+		pair_Panel.jSplitPanel.setDividerLocation(MainFrame.getInstance().getHeight()/3);
 		this.setResizable(true);
-		this.setLocationRelativeTo(null);
+		this.setSize(MainFrame.getInstance().getWidth()-300, MainFrame.getInstance().getHeight()-300);
+		this.setLocationRelativeTo(MainFrame.getInstance());
 		this.setVisible(true);
 	}
 private void selectAsset(){

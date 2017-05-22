@@ -36,6 +36,8 @@ public class ConnectionCreator extends Thread {
 			try
 			{	
 
+				Thread.sleep(100);
+
 				int maxReceivePeers = 4; // Settings.getInstance().getMaxReceivePeers();
 				
 				//CHECK IF WE NEED NEW CONNECTIONS
@@ -198,21 +200,8 @@ public class ConnectionCreator extends Thread {
 					}
 				}
 				
-				//SLEEP
-				int cnt = callback.getActivePeers(true).size();
-				int minCnt = Settings.getInstance().getMinConnections();
-				if (cnt < 4) {
-					Thread.sleep(30000);
-					continue;
-				}
-				else if (cnt < minCnt)
-					// BANNES PEERS update each minute
-					sleep_time = 1;
-				else
-					// sleep
-					sleep_time = 10;
-					
-				Thread.sleep(sleep_time * 60000);
+				//SLEEP					
+				Thread.sleep(20000);
 
 			}
 			catch(Exception e)

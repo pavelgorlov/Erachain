@@ -29,8 +29,32 @@ import database.DBSet;
 import lang.Lang;
 import utils.NumberAsString;
 
-//typeBytes[1] (version) = 1 - CONFISCATE CREDIT
-//typeBytes[2] = -128 if NO AMOUNT
+/*
+
+## typeBytes
+0 - record type
+1 - record version
+2 - property 1
+3 = property 2
+
+## version 0
+// typeBytes[2] = -128 if NO AMOUNT
+// typeBytes[3] = -128 if NO DATA
+
+## version 1
+if backward - CONFISCATE CREDIT
+
+## version 2
+
+#### PROPERTY 1
+typeBytes[2].0 = -128 if NO AMOUNT
+typeBytes[2].1 = -64 if backward - CONFISCATE CREDIT
+
+#### PROPERTY 2
+typeBytes[3].0 = -128 if NO DATA
+
+*/
+
 public abstract class TransactionAmount extends Transaction {
 
 	protected static final int AMOUNT_LENGTH = 8;
@@ -269,7 +293,10 @@ public abstract class TransactionAmount extends Transaction {
 
 			//CHECK IF AMOUNT IS DIVISIBLE
 			int amount_sign = this.amount.signum();
-			boolean confiscate_credit = typeBytes[1] == 1;
+			
+			// BACKWARD - CONFISCATE
+			boolean confiscate_credit = typeBytes[1] == 1 
+					|| typeBytes[1] > 1 && (typeBytes[2] & (byte)-64) > 0;
 			
 			if (amount_sign != 0) {
 
@@ -303,7 +330,7 @@ public abstract class TransactionAmount extends Transaction {
 					
 					// 75hXUtuRoKGCyhzps7LenhWnNtj9BeAF12 -> 7F9cZPE1hbzMT21g96U8E1EfMimovJyyJ7
 					if (confiscate_credit) {
-						// BORROW - CONFISCATE CREDIT
+						// BACKWARD - BORROW - CONFISCATE CREDIT
 						Tuple3<String, Long, String> creditKey = new Tuple3<String, Long, String>(
 								this.creator.getAddress(), absKey,
 								this.recipient.getAddress()); 
@@ -415,7 +442,10 @@ public abstract class TransactionAmount extends Transaction {
 						
 		long absKey = getAbsKey();
 
-		boolean confiscate_credit = typeBytes[1] == 1; 
+		// BACKWARD - CONFISCATE
+		boolean confiscate_credit = typeBytes[1] == 1
+				|| typeBytes[1] > 1 && (typeBytes[2] & (byte)-64) > 0;
+
 		//UPDATE SENDER
 		this.creator.changeBalance(db, !confiscate_credit, key, this.amount);
 		//UPDATE RECIPIENT
@@ -499,7 +529,10 @@ public abstract class TransactionAmount extends Transaction {
 						
 		long absKey = getAbsKey();
 
-		boolean confiscate_credit = typeBytes[1] == 1; 
+		// BACKWARD - CONFISCATE
+		boolean confiscate_credit = typeBytes[1] == 1
+				|| typeBytes[1] > 1 && (typeBytes[2] & (byte)-64) > 0;
+		
 		//UPDATE SENDER
 		this.creator.changeBalance(db, confiscate_credit, key, this.amount);
 		//UPDATE RECIPIENT

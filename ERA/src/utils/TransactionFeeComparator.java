@@ -1,6 +1,9 @@
 package utils;
 
 import java.util.Comparator;
+import java.util.List;
+
+import org.mapdb.Fun.Tuple2;
 
 import core.transaction.Transaction;
 

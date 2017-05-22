@@ -21,7 +21,8 @@
 	import javax.swing.Timer;
 	import java.awt.*;
 
-	import javax.swing.DefaultRowSorter;
+import javax.swing.AbstractButton;
+import javax.swing.DefaultRowSorter;
 	import javax.swing.JButton;
 	import javax.swing.JDialog;
 	import javax.swing.JFrame;
@@ -34,7 +35,9 @@
 	import javax.swing.JTextField;
 	import javax.swing.RowFilter;
 	import javax.swing.RowSorter;
-	import javax.swing.event.DocumentEvent;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.event.DocumentEvent;
 	import javax.swing.event.DocumentListener;
 	import javax.swing.event.ListSelectionEvent;
 	import javax.swing.event.ListSelectionListener;
@@ -47,9 +50,7 @@
 	import controller.Controller;
 	import core.item.assets.AssetCls;
 	import core.item.persons.PersonCls;
-	import gui.MainFrame;
 	import gui.Main_Internal_Frame;
-	import gui.RunMenu;
 	import gui.Split_Panel;
 	import gui.items.assets.IssueAssetPanel;
 	import gui.items.assets.TableModelItemAssets;
@@ -76,6 +77,7 @@ import gui.models.Renderer_Boolean;
 		
 		
 	public Persons_My_SplitPanel(){
+		super("Persons_My_SplitPanel");
 	
 		this.setName(Lang.getInstance().translate("My Persons"));
 			this.searthLabel_SearchToolBar_LeftPanel.setText(Lang.getInstance().translate("Search") +":  ");
@@ -96,7 +98,29 @@ import gui.models.Renderer_Boolean;
 			TableColumnModel columnModel = my_Person_table.getColumnModel(); // read column model
 			columnModel.getColumn(0).setMaxWidth((100));
 			
+			this.addAncestorListener(new AncestorListener(){
+
+				@Override
+				public void ancestorAdded(AncestorEvent arg0) {
+					// TODO Auto-generated method stub
+					my_PersonsModel.addObservers();
+				}
+
+				@Override
+				public void ancestorMoved(AncestorEvent arg0) {
+					// TODO Auto-generated method stub
 					
+				}
+
+				@Override
+				public void ancestorRemoved(AncestorEvent arg0) {
+					// TODO Auto-generated method stub
+					my_PersonsModel.removeObservers();
+				}
+				
+				
+				
+			});	
 					
 	//		my_Sorter = new TableRowSorter(my_PersonsModel);
 	//		my_Person_table.setRowSorter(my_Sorter);
@@ -134,9 +158,9 @@ import gui.models.Renderer_Boolean;
 	
 		
 
-			 Dimension size = MainFrame.getInstance().desktopPane.getSize();
-			 this.setSize(new Dimension((int)size.getWidth()-100,(int)size.getHeight()-100));
-			 jSplitPanel.setDividerLocation((int)(size.getWidth()/1.618));
+	//		 Dimension size = MainFrame.getInstance().desktopPane.getSize();
+	//		 this.setSize(new Dimension((int)size.getWidth()-100,(int)size.getHeight()-100));
+			// jSplitPanel.setDividerLocation((int)(size.getWidth()/1.618));
 			
 		  
 		    
@@ -219,7 +243,16 @@ import gui.models.Renderer_Boolean;
 			}
 		}
 		
+	@Override
+	public void delay_on_close(){
+		// delete observer left panel
+		my_PersonsModel.removeObservers();
+		// get component from right panel
+		Component c1 = jScrollPane_jPanel_RightPanel.getViewport().getView();
+		// if Person_Info 002 delay on close
+		  if (c1 instanceof Person_Info_002) ( (Person_Info_002)c1).delay_on_Close();
 		
+	}
 	
 	}
 
