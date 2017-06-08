@@ -20,6 +20,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -51,6 +52,7 @@ import core.crypto.Base58;
 import core.crypto.Crypto;
 import core.item.ItemCls;
 import core.item.assets.AssetCls;
+import core.item.persons.PersonCls;
 import core.naming.Name;
 import core.transaction.ArbitraryTransaction;
 import core.transaction.BuyNameTransaction;
@@ -87,6 +89,8 @@ import core.transaction.VoteOnPollTransaction;
 import database.BlockHeightsMap;
 import database.BlockMap;
 import database.DBSet;
+import database.ItemAssetMap;
+import database.ItemPersonMap;
 import database.SortableList;
 import lang.Lang;
 import network.Peer;
@@ -130,8 +134,12 @@ public class API {
 		help.put("GET Blocks Signatures from Height by Limit (end:1 if END id reached)", "/blockssignaturesfromheight/{height}/{limit}");		
 
 		help.put("RECORD", "----------------");
+		help.put("GET Record Parse from RAW", "recordparse/{raw}");
+		help.put("POST Record Parse from RAW", "recordparse?raw=...");
 		help.put("GET Record", "record/{signature}");
 		help.put("GET Record by Height and Sequence", "recordbynumber/{height-sequence}");
+		help.put("GET Record RAW", "recordraw/{signature}");
+		help.put("GET Record RAW by Height and Sequence", "recordrawbynumber/{height-sequence}");
 		
 		help.put("ADDRESS", "---------------");
 		help.put("GET Address Validate", "addressvalidate/{address}");
@@ -150,7 +158,16 @@ public class API {
 		help.put("ASSETS", "-----------------");
 		help.put("GET Assets", "assets");
 		help.put("GET Asset Full", "assetsfull");
+
+		help.put("PERSON", "-----------------");
+		help.put("GET Person Height", "personheight");
+		help.put("GET Person", "person/{key}");
+		help.put("GET Person Data", "persondata/{key}");
 		
+		help.put("PERSONS", "-----------------");
+		//help.put("GET Persons", "persons");
+		//help.put("GET Persons Full", "personsfull");
+
 		help.put("TOOLS", "");
 		help.put("POST Verify Signature for JSON {\"message\": ..., \"signature\": Base58, \"publickey\": Base58)", "verifysignature");
 		
@@ -443,6 +460,38 @@ public class API {
 	/*
 	 * ************** RECORDS **********
 	 */
+	
+	@POST
+	@Path("recordparse")
+	public Response recordParse(@QueryParam("raw") String raw) // throws JSONException
+	{
+
+		JSONObject out = new JSONObject();
+		
+		//CREATE TRANSACTION FROM RAW
+		Transaction transaction;
+		try {			
+			transaction = TransactionFactory.getInstance().parse(Base58.decode(raw), null);
+			out = transaction.toJson();
+		} catch (Exception e) {
+			out.put("error", -1);
+			out.put("message", APIUtils.errorMess(-1, e.toString()));
+		}
+
+		return Response.status(200)
+				.header("Content-Type", "application/json; charset=utf-8")
+				.header("Access-Control-Allow-Origin", "*")
+				.entity(StrJSonFine.convert(out))
+				.build();
+	}
+
+	@GET
+	@Path("recordparse/{raw}")
+	public Response recordParseGET(@PathParam("raw") String raw) // throws JSONException
+	{
+		return recordParse(raw);
+	}
+
 	@GET
 	@Path("record/{signature}")
 	public Response record(@PathParam("signature") String signature)
@@ -512,6 +561,113 @@ public class API {
 				.header("Access-Control-Allow-Origin", "*")
 				.entity(StrJSonFine.convert(out))
 				.build();
+	}
+
+	@GET
+	@Path("recordraw/{signature}")
+	public Response recordRaw(@PathParam("signature") String signature)
+	{
+		
+		Map out = new LinkedHashMap();
+
+		int steep = 1;
+
+		try {
+			byte[] key = Base58.decode(signature);
+
+			++steep;
+			Transaction record = cntrl.getTransaction(key, dbSet);		
+			out = record.rawToJson();
+			
+		} catch (Exception e) {
+			
+			out.put("error", steep);
+			if (steep == 1)
+				out.put("message", "signature error, use Base58 value");
+			else if (steep == 2)
+				out.put("message", "record not found");
+			else
+				out.put("message", e.getMessage());
+		}
+		
+		return Response.status(200)
+				.header("Content-Type", "application/json; charset=utf-8")
+				.header("Access-Control-Allow-Origin", "*")
+				.entity(StrJSonFine.convert(out))
+				.build();
+	}
+
+	@GET
+	@Path("recordrawbynumber/{number}")
+	public Response recodRawByNumber(@PathParam("number") String numberStr)
+	{
+		
+		Map out = new LinkedHashMap();
+		int steep = 1;
+
+		try {
+			
+			String[] strA = numberStr.split("\\-");
+			int height = Integer.parseInt(strA[0]);
+			int seq = Integer.parseInt(strA[1]);
+			
+			++steep;	
+			Transaction record = dbSet.getTransactionFinalMap().getTransaction(height, seq);
+			out = record.rawToJson();
+						
+		} catch (Exception e) {
+			
+			out.put("error", steep);
+			if (steep == 1)
+				out.put("message", "height-sequence error, use integer-integer value");
+			else if (steep == 2)
+				out.put("message", "record not found");
+			else
+				out.put("message", e.getMessage());
+		}
+
+		
+		return Response.status(200)
+				.header("Content-Type", "application/json; charset=utf-8")
+				.header("Access-Control-Allow-Origin", "*")
+				.entity(StrJSonFine.convert(out))
+				.build();
+	}
+
+	@POST
+	@Path("broadcast")
+	// http://127.0.0.1:9047/lightwallet/broadcast?data=DPDnFCNvPk4m8GMi2ZprirSgQDwxuQw4sWoJA3fmkKDrYwddTPtt1ucFV4i45BHhNEn1W1pxy3zhRfpxKy6fDb5vmvQwwJ3M3E12jyWLBJtHRYPLnRJnK7M2x5MnPbvnePGX1ahqt7PpFwwGiivP1t272YZ9VKWWNUB3Jg6zyt51fCuyDCinLx4awQPQJNHViux9xoGS2c3ph32oi56PKpiyM
+	public Response broadcastFromRawPost(@QueryParam("raw") String raw58)
+	{
+		byte[] transactionBytes = Base58.decode(raw58);
+		
+		Pair<Transaction, Integer> result = Controller.getInstance().createTransactionFromRaw(transactionBytes);
+		if(result.getB() == Transaction.VALIDATE_OK) {
+			return Response.status(200)
+					.header("Content-Type", "application/json; charset=utf-8")
+					.header("Access-Control-Allow-Origin", "*")
+					.entity(StrJSonFine.convert(result.getA().toJson()))
+					.build();
+		} else {
+			
+			Map out = new LinkedHashMap();
+			out.put("error", result.getB());
+			out.put("message", gui.transaction.OnDealClick.resultMess(result.getB()));
+			return Response.status(200)
+					.header("Content-Type", "application/json; charset=utf-8")
+					.header("Access-Control-Allow-Origin", "*")
+					.entity(StrJSonFine.convert(result.getA().toJson()))
+					.build();
+		}
+	}
+
+	@GET
+	@Path("broadcast/{raw}")
+	// http://127.0.0.1:9047/lightwallet/broadcast?data=DPDnFCNvPk4m8GMi2ZprirSgQDwxuQw4sWoJA3fmkKDrYwddTPtt1ucFV4i45BHhNEn1W1pxy3zhRfpxKy6fDb5vmvQwwJ3M3E12jyWLBJtHRYPLnRJnK7M2x5MnPbvnePGX1ahqt7PpFwwGiivP1t272YZ9VKWWNUB3Jg6zyt51fCuyDCinLx4awQPQJNHViux9xoGS2c3ph32oi56PKpiyM
+	public Response broadcastRaw(@PathParam("raw") String raw)
+	{
+		
+		return broadcastFromRawPost(raw);
 	}
 
 	/*
@@ -672,14 +828,14 @@ public class API {
 		} catch (NumberFormatException e) {
 			throw ApiErrorFactory.getInstance().createError(
 					//ApiErrorFactory.ERROR_INVALID_ASSET_ID);
-					Transaction.ASSET_DOES_NOT_EXIST);
+					Transaction.ITEM_ASSET_NOT_EXIST);
 		}
 
 		// DOES ASSETID EXIST
 		if (!DBSet.getInstance().getItemAssetMap().contains(assetAsLong)) {
 			throw ApiErrorFactory.getInstance().createError(
 					//ApiErrorFactory.ERROR_INVALID_ASSET_ID);
-					Transaction.ASSET_DOES_NOT_EXIST);
+					Transaction.ITEM_ASSET_NOT_EXIST);
 
 		}
 		
@@ -774,14 +930,15 @@ public class API {
 	@Path("asset/{key}")
 	public Response asset(@PathParam("key") long key) {
 		
+		ItemAssetMap map = DBSet.getInstance().getItemAssetMap();
 		// DOES ASSETID EXIST
-		if (!DBSet.getInstance().getItemAssetMap().contains(key)) {
+		if (!map.contains(key)) {
 			throw ApiErrorFactory.getInstance().createError(
 					//ApiErrorFactory.ERROR_INVALID_ASSET_ID);
-					Transaction.ASSET_DOES_NOT_EXIST);
+					Transaction.ITEM_ASSET_NOT_EXIST);
 		}
 		
-		AssetCls asset = (AssetCls)DBSet.getInstance().getItemAssetMap().get(key);
+		AssetCls asset = (AssetCls)map.get(key);
 		
 		return Response.status(200)
 				.header("Content-Type", "application/json; charset=utf-8")
@@ -795,14 +952,15 @@ public class API {
 	@Path("assetdata/{key}")
 	public Response assetData(@PathParam("key") long key) {
 		
+		ItemAssetMap map = DBSet.getInstance().getItemAssetMap();
 		// DOES ASSETID EXIST
-		if (!DBSet.getInstance().getItemAssetMap().contains(key)) {
+		if (!map.contains(key)) {
 			throw ApiErrorFactory.getInstance().createError(
 					//ApiErrorFactory.ERROR_INVALID_ASSET_ID);
-					Transaction.ASSET_DOES_NOT_EXIST);
+					Transaction.ITEM_ASSET_NOT_EXIST);
 		}
 		
-		AssetCls asset = (AssetCls)DBSet.getInstance().getItemAssetMap().get(key);
+		AssetCls asset = (AssetCls)map.get(key);
 		
 		return Response.status(200)
 				.header("Content-Type", "application/json; charset=utf-8")
@@ -834,6 +992,68 @@ public class API {
 				.build();
 		
 	}
+
+	/*
+	 * ************* PERSONS **************
+	 */
+	@GET
+	@Path("personheight")
+	public Response personHeight() {
+		
+		long height = dbSet.getItemPersonMap().getSize();
+
+		return Response.status(200)
+				.header("Content-Type", "application/json; charset=utf-8")
+				.header("Access-Control-Allow-Origin", "*")
+				.entity("" + height)
+				.build();
+		
+	}
+
+	@GET
+	@Path("person/{key}")
+	public Response person(@PathParam("key") long key) {
+		
+		ItemPersonMap map = DBSet.getInstance().getItemPersonMap();
+		// DOES EXIST
+		if (!map.contains(key)) {
+			throw ApiErrorFactory.getInstance().createError(
+					//ApiErrorFactory.ERROR_INVALID_ASSET_ID);
+					Transaction.ITEM_PERSON_NOT_EXIST);
+		}
+		
+		PersonCls person = (PersonCls)map.get(key);
+		
+		return Response.status(200)
+				.header("Content-Type", "application/json; charset=utf-8")
+				.header("Access-Control-Allow-Origin", "*")
+				.entity(StrJSonFine.convert(person.toJson()))
+				.build();
+		
+	}
+	@GET
+
+	@Path("persondata/{key}")
+	public Response personData(@PathParam("key") long key) {
+		
+		ItemPersonMap map = DBSet.getInstance().getItemPersonMap();
+		// DOES ASSETID EXIST
+		if (!map.contains(key)) {
+			throw ApiErrorFactory.getInstance().createError(
+					//ApiErrorFactory.ERROR_INVALID_ASSET_ID);
+					Transaction.ITEM_PERSON_NOT_EXIST);
+		}
+		
+		PersonCls person = (PersonCls)map.get(key);
+		
+		return Response.status(200)
+				.header("Content-Type", "application/json; charset=utf-8")
+				.header("Access-Control-Allow-Origin", "*")
+				.entity(StrJSonFine.convert(person.toJsonData()))
+				.build();
+		
+	}
+
 
 	/*
 	 * ************* TOOLS **************

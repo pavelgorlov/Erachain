@@ -22,6 +22,7 @@ import core.item.assets.AssetCls;
 import core.transaction.Transaction;
 import core.web.ServletUtils;
 import database.DBSet;
+import gui.MainFrame;
 import gui.PasswordPane;
 import settings.Settings;
 //import test.records.TestRecNote;
@@ -51,13 +52,13 @@ public class APIUtils {
 				asset = Controller.getInstance().getAsset(new Long(assetKeyString));
 			} catch (Exception e) {
 				throw ApiErrorFactory.getInstance().createError(
-						Transaction.ASSET_DOES_NOT_EXIST);
+						Transaction.ITEM_ASSET_NOT_EXIST);
 			}
 		}
 		
 		if (asset == null )
 			throw ApiErrorFactory.getInstance().createError(
-					Transaction.ASSET_DOES_NOT_EXIST);
+					Transaction.ITEM_ASSET_NOT_EXIST);
 		
 		// PARSE AMOUNT
 		BigDecimal bdAmount;
@@ -168,7 +169,7 @@ public class APIUtils {
 			if(!GraphicsEnvironment.isHeadless() && (Settings.getInstance().isGuiEnabled()))
 			{	
 				if(!Controller.getInstance().isWalletUnlocked()) {
-					password = PasswordPane.showUnlockWalletDialog(); 
+					password = PasswordPane.showUnlockWalletDialog(MainFrame.getInstance()); 
 					if(!password.equals("") && !Controller.getInstance().unlockWallet(password))
 					{
 						JOptionPane.showMessageDialog(null, "Invalid password", "Unlock Wallet", JOptionPane.ERROR_MESSAGE);

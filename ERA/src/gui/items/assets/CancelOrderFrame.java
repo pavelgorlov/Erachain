@@ -1,5 +1,6 @@
 package gui.items.assets;
 
+import gui.MainFrame;
 import gui.PasswordPane;
 import lang.Lang;
 
@@ -43,7 +44,7 @@ public class CancelOrderFrame extends JDialog
 		//super(Lang.getInstance().translate("ARONICLE.com") + " - " + Lang.getInstance().translate("Cancel Order"));
 		setTitle(Lang.getInstance().translate("ARONICLE.com") + " - " + Lang.getInstance().translate("Cancel Order"));
 		this.order = order;
-	//	setAlwaysOnTop(true);
+		setAlwaysOnTop(true);
 		setModal(true);
 		
 		//ICON
@@ -169,7 +170,7 @@ public class CancelOrderFrame extends JDialog
         //BUTTON CANCEL SALE
         buttonGBC.gridy = 8;
         cancelOrderButton = new JButton(Lang.getInstance().translate("Cancel Order"));
-        cancelOrderButton.setPreferredSize(new Dimension(120, 25));
+    //    cancelOrderButton.setPreferredSize(new Dimension(120, 25));
         cancelOrderButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -181,7 +182,8 @@ public class CancelOrderFrame extends JDialog
     	
         //PACK
 		this.pack();
-        this.setResizable(false);
+        this.setResizable(true);
+        this.setPreferredSize(new Dimension ((int) ( MainFrame.getInstance().getWidth()*0.8), (int) (MainFrame.getInstance().getHeight()*.8) ));
         this.setLocationRelativeTo(null);
         this.setVisible(true);
 	}
@@ -192,7 +194,7 @@ public class CancelOrderFrame extends JDialog
 		this.cancelOrderButton.setEnabled(false);
 		
 		//CHECK IF NETWORK OK
-		if(Controller.getInstance().getStatus() != Controller.STATUS_OK)
+		if(false && Controller.getInstance().getStatus() != Controller.STATUS_OK)
 		{
 			//NETWORK NOT OK
 			JOptionPane.showMessageDialog(null, Lang.getInstance().translate("You are unable to send a transaction while synchronizing or while having no connections!"), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
@@ -207,7 +209,7 @@ public class CancelOrderFrame extends JDialog
 		if(!Controller.getInstance().isWalletUnlocked())
 		{
 			//ASK FOR PASSWORD
-			String password = PasswordPane.showUnlockWalletDialog(); 
+			String password = PasswordPane.showUnlockWalletDialog(this); 
 			if(!Controller.getInstance().unlockWallet(password))
 			{
 				//WRONG PASSWORD

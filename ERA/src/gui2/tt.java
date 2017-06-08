@@ -72,6 +72,7 @@ public tt() {
    root.add(other_Node);
 
    // ��������� �������� �������� (������) ������ �����
+   person_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Favorite Persons")));
    person_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("My Persons")));
    person_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Search Persons")));
    person_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Issue Person")));
@@ -120,6 +121,7 @@ public tt() {
    records_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Unconfirmed Records")));
    
    other_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Other")));
+   other_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Wallets Manager")));
    
    
 

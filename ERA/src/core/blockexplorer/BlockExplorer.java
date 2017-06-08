@@ -853,7 +853,9 @@ public class BlockExplorer
 			a =  Lang.getInstance().translate_from_langObj("False",langObj);
 			if (asset.isMovable()) a =  Lang.getInstance().translate_from_langObj("True",langObj);
 			assetJSON.put("isMovable", a);
-
+			
+			assetJSON.put("img", Base64.encodeBase64String(asset.getImage()));
+			assetJSON.put("icon", Base64.encodeBase64String(asset.getIcon()));
 			List<Order> orders = DBSet.getInstance().getOrderMap().getOrders(asset.getKey());
 			List<Trade> trades = DBSet.getInstance().getTradeMap().getTrades(asset.getKey());
 
@@ -1223,6 +1225,8 @@ if ( asset_1 == null) {
 		String divis = Lang.getInstance().translate_from_langObj("False", langObj);
 		if (asset.isDivisible()) divis = Lang.getInstance().translate_from_langObj("True", langObj);
 		assetJSON.put("isDivisible",divis );
+		assetJSON.put("img", Base64.encodeBase64String(asset.getImage()));
+		assetJSON.put("icon", Base64.encodeBase64String(asset.getIcon()));
 
 		
 		List<Transaction> transactions = DBSet.getInstance().getTransactionFinalMap().getTransactionsByTypeAndAddress(asset.getOwner().getAddress(), Transaction.ISSUE_ASSET_TRANSACTION, 0);
@@ -2011,7 +2015,7 @@ if ( asset_1 == null) {
 		output.put("Label_Title",(Lang.getInstance().translate_from_langObj("Top %limit% %assetName% Richest",langObj).replace("%limit%",String.valueOf(limit))).replace("%assetName%", asset.getName()));
 		output.put("Label_All_non", (Lang.getInstance().translate_from_langObj("All non-empty %assetName% accounts (%count%)",langObj).replace("%assetName%", asset.getName())).replace("%count%", String.valueOf(couter)));
 		output.put("Label_All_accounts",(Lang.getInstance().translate_from_langObj("All %assetName% accounts (%count%)",langObj).replace("%assetName%", asset.getName())).replace("%count%", String.valueOf(couter)));
-		output.put("Label_Total_coins_in_the_system", Lang.getInstance().translate_from_langObj("Total coins in the system", langObj));
+		output.put("Label_Total_coins_in_the_system", Lang.getInstance().translate_from_langObj("Total asset units in the system", langObj));
 		
 		return output;
 	}	
@@ -3451,14 +3455,11 @@ if ( asset_1 == null) {
 			out_statement.put("person_key", model_Statements.get_person_key(row));
 			
 			for (int column=0; column < column_Count; column++ ){
+				String value = model_Statements.getValueAt(row, column).toString();
+				if (value == null || value.isEmpty())
+					value = "***";
 				
-				
-				
-				
-				
-				
-				out_statement.put(model_Statements.getColumnNameNO_Translate(column).replace(' ', '_'), model_Statements.getValueAt(row, column).toString());
-				
+				out_statement.put(model_Statements.getColumnNameNO_Translate(column).replace(' ', '_'), value);
 			}
 			out_Statements.put(row, out_statement);			
 		}
@@ -3510,7 +3511,7 @@ if ( asset_1 == null) {
 				}
 				
 				String str_HTML = "";
-				if ( map_Data.b != null) str_HTML = "<b>"+Lang.getInstance().translate("Title") + ": </b>" +  map_Data.b +"\n";
+				if ( map_Data.b != null) str_HTML = "<b>"+Lang.getInstance().translate("Title") + ": </b>" +  map_Data.b +"<br>";
 					
 				JSONObject jSON = map_Data.c;
 				// parse JSON
@@ -3540,13 +3541,9 @@ if ( asset_1 == null) {
 							 for (String s:kS){
 									description = description.replace("{{" + s + "}}", (CharSequence) params.get(s));
 							 }
-
-				
-					
-					
 					
 						}
-						str_HTML+= description + "\n";
+						str_HTML+= description + "<br>";
 					}
 					}
 	// V2.1 Template
@@ -3575,18 +3572,20 @@ if ( asset_1 == null) {
 					
 					
 						}
-							 str_HTML+= description + "\n";
+							 //str_HTML+= description + "<br>";
+							 str_HTML += Processor.process(description) + "<br>"; 
+
 					}
 						 
 					}
 // Message v2.0
-					if (jSON.containsKey("Message")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj) + ": </b>\n"+ jSON.get("Message") +"\n";
+					if (jSON.containsKey("Message")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj) + ": </b><br>"+ jSON.get("Message") +"<br>";
 	// v 2.1
-					if (jSON.containsKey("MS")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj) + ": </b>\n"+jSON.get("MS") +"\n";
+					if (jSON.containsKey("MS")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj) + ": </b><br>"+jSON.get("MS") +"<br>";
 	// Hashes
 		// v2.0
 					if (jSON.containsKey("Hashes")){
-						str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Hashes", langObj) + ": </b>\n";
+						str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Hashes", langObj) + ": </b><br>";
 						String hasHes = "";
 						String str = jSON.get("Hashes").toString();
 						 JSONObject params = new JSONObject();
@@ -3600,15 +3599,15 @@ if ( asset_1 == null) {
 						 
 						 int i = 1;
 						 for (String s:kS){
-							hasHes += i + " " + s + " " + params.get(s) + "\n";
+							hasHes += i + " " + s + " " + params.get(s) + "<br>";
 						 }
 						 
-						 str_HTML += hasHes + "\n";
+						 str_HTML += hasHes + "<br>";
 					}
 	// v2.1
 					if (jSON.containsKey("HS")){
 						
-						str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Hashes", langObj) + ": <b>\n";
+						str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Hashes", langObj) + ": <b><br>";
 						String hasHes = "";
 						String str = jSON.get("HS").toString();
 						 JSONObject params = new JSONObject();
@@ -3622,10 +3621,10 @@ if ( asset_1 == null) {
 						 
 						 int i = 1;
 						 for (String s:kS){
-							hasHes += i + " " + s + " " + params.get(s) + "\n";
+							hasHes += i + " " + s + " " + params.get(s) + "<br>";
 						 }
 						 
-						 str_HTML += hasHes + "\n";
+						 str_HTML += hasHes + "<br>";
 					
 					}
 	
@@ -3634,7 +3633,7 @@ if ( asset_1 == null) {
 // parse Ffiles
 	// v2.0
 				if (jSON.containsKey("&*&*%$$%_files_#$@%%%") ){
-					str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Files", langObj) + ": </b>\n";
+					str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Files", langObj) + ": </b><br>";
 					String hasHes = "";
 					String str = jSON.get("&*&*%$$%_files_#$@%%%").toString();
 					 JSONObject params = new JSONObject();
@@ -3653,16 +3652,16 @@ if ( asset_1 == null) {
 							
 							ss = (JSONObject) params.get(s);
 						
-						hasHes += i + " "  + ss.get("File_Name") + "\n";
+						hasHes += i + " "  + ss.get("File_Name") + "<br>";
 					 }
 					
-					 str_HTML += hasHes + "\n";
+					 str_HTML += hasHes + "<br>";
 				
 				}	
 //	v 2.1
 				if (jSON.containsKey("F") ){
 					
-					str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Files", langObj) + ": </b>\n";
+					str_HTML += "<b>"+Lang.getInstance().translate_from_langObj("Files", langObj) + ": </b><br>";
 					String hasHes = "";
 					String str = jSON.get("F").toString();
 					 JSONObject params = new JSONObject();
@@ -3680,16 +3679,17 @@ if ( asset_1 == null) {
 						
 							ss = (JSONObject) params.get(s);
 						
-						hasHes += i + " "  + ss.get("FN") + "\n";
+						hasHes += i + " "  + ss.get("FN") + "<br>";
 					 }
 					 
-					 str_HTML += hasHes + "\n";
+					 str_HTML += hasHes + "<br>";
 					
 				}	
 				
 				
 				
-				output.put("statement", library.to_HTML(str_HTML));	
+				//output.put("statement", library.to_HTML(str_HTML));	
+				output.put("statement", str_HTML);	
 			}
 			
 			
@@ -3721,20 +3721,22 @@ if ( asset_1 == null) {
 				 
 				 int i = 1;
 				 for (String s:kS){
-					 hasHes += i + " " + s + " " + params.get(s) + "\n";
+					 hasHes += i + " " + s + " " + params.get(s) + "<br>";
 				 }
 				 
 				 
 				 
 				 String sT =
-						  data.get("Title") + "\n\n"
-							+  description + "\n\n"
-							+    data.get("Message") + "\n\n"
+						  data.get("Title") + "<br><br>"
+							+  description + "<br><br>"
+							+    data.get("Message") + "<br><br>"
 							+ hasHes;
 			
 			
 			
-			output.put("statement", library.to_HTML(sT));
+				 //output.put("statement", library.to_HTML(sT));
+				 output.put("statement", Processor.process(sT)); 
+				 
 			 
 		 } catch (ParseException e) {
 		

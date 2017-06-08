@@ -1,14 +1,35 @@
 package gui.library;
 
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+
 import javax.swing.JFileChooser;
 import javax.swing.UIManager;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
+import controller.Controller;
 import lang.Lang;
+import settings.Settings;
 
 public class My_JFileChooser extends JFileChooser{
+	
+	private static String default_path = Settings.getInstance().get_File_Chooser_Paht();
+	private My_JFileChooser th;
+	protected static int default_Wight = Settings.getInstance().get_File_Chooser_Wight();
+	protected static int default_Height = Settings.getInstance().get_File_Chooser_Height();
 
 // настройка диалога файлового на русский язык
 	public My_JFileChooser () {
+		super(default_path);
+		th = this;
+		if (default_Wight != 0 || default_Height != 0) this.setPreferredSize(new Dimension(default_Wight, default_Height)); 
+		
 		UIManager.put("FileChooser.openButtonText", Lang.getInstance().translate("Open"));
 		UIManager.put("FileChooser.cancelButtonText", Lang.getInstance().translate( "Cancel"));
 		UIManager.put("FileChooser.lookInLabelText",Lang.getInstance().translate( "Look in"));
@@ -43,6 +64,7 @@ public class My_JFileChooser extends JFileChooser{
 
 		UIManager.put("FileChooser.detailsViewButtonAccessibleName",  Lang.getInstance().translate("All Files"));
 		this.updateUI();
+	
 		
 		/*
 		      FileChooser.acceptAllFileFilterText=Все файлы
@@ -99,7 +121,39 @@ public class My_JFileChooser extends JFileChooser{
     FileChooser.upFolderToolTipText=Вверх
 		 */
 
-		} 
+//   My_JFileChooser.set_Default_Path(chooser.getCurrentDirectory().getPath());
+	// save path	
+		addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+              if (e.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)){
+                    // была нажата кнопка OK
+            	  // save path
+            	  default_path = getCurrentDirectory().getPath();
+            	  // save size
+            	  default_Wight = th.getWidth();
+            	  default_Height= th.getHeight();
+            	  
+            	  
+              } else if (e.getActionCommand().equals(JFileChooser.CANCEL_SELECTION)) {
+                    // была нажата кнопка Cancel
+              }
+            }
+        });
+		
+	} 
+	
 
+	public static String get_Default_Path(){
+		return default_path;
+	}
+	
+	public static int get_Default_Width(){
+		return default_Wight;
+	}
+	public static int get_Default_Height(){
+		return default_Height;
+	}
+	
+	
 
 }

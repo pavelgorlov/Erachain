@@ -144,6 +144,25 @@ import gui.models.Renderer_Boolean;
 			favoriteColumn.setMaxWidth(50);
 			favoriteColumn.setPreferredWidth(50);//.setWidth(30);
 			
+			my_Person_table.addMouseMotionListener(new MouseMotionListener() {
+			    public void mouseMoved(MouseEvent e) {
+			       
+			        if(my_Person_table.columnAtPoint(e.getPoint())==WalletItemPersonsTableModel.COLUMN_FAVORITE)
+			        {
+			     
+			        	my_Person_table.setCursor(new Cursor(Cursor.HAND_CURSOR));
+			        } else {
+			        	my_Person_table.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+			        }
+			    }
+
+			    public void mouseDragged(MouseEvent e) {
+			    }
+			});
+			
+			
+			
+			
 			// UPDATE FILTER ON TEXT CHANGE
 			this.searchTextField_SearchToolBar_LeftPanel.getDocument().addDocumentListener(new My_Search());
 			// SET VIDEO			
@@ -155,7 +174,32 @@ import gui.models.Renderer_Boolean;
 			// EVENTS on CURSOR
 			my_Person_table.getSelectionModel().addListSelectionListener(new My_Tab_Listener());
 			
-	
+			jTable_jScrollPanel_LeftPanel.addMouseListener(new MouseAdapter() 
+			{
+				@Override
+				public void mousePressed(MouseEvent e) 
+				{
+					Point p = e.getPoint();
+					int row = jTable_jScrollPanel_LeftPanel.rowAtPoint(p);
+					jTable_jScrollPanel_LeftPanel.setRowSelectionInterval(row, row);
+					
+					
+					if(e.getClickCount() == 1 & e.getButton() == e.BUTTON1)
+					{
+						
+						if (jTable_jScrollPanel_LeftPanel.getSelectedColumn() == TableModelPersons.COLUMN_FAVORITE){
+							row = jTable_jScrollPanel_LeftPanel.convertRowIndexToModel(row);
+							 PersonCls asset = my_PersonsModel.getItem(row);
+							favorite_set( jTable_jScrollPanel_LeftPanel);	
+							
+							
+							
+						}
+						
+						
+					}
+			     }
+			});
 		
 
 	//		 Dimension size = MainFrame.getInstance().desktopPane.getSize();
@@ -253,6 +297,35 @@ import gui.models.Renderer_Boolean;
 		  if (c1 instanceof Person_Info_002) ( (Person_Info_002)c1).delay_on_Close();
 		
 	}
+	
+	 public void favorite_set(JTable personsTable){
+
+
+		 int row = personsTable.getSelectedRow();
+		 row = personsTable.convertRowIndexToModel(row);
+
+		  PersonCls person = my_PersonsModel.getItem(row);
+		 //new AssetPairSelect(asset.getKey());
+
+		
+		 	//CHECK IF FAVORITES
+		 	if(Controller.getInstance().isItemFavorite(person))
+		 	{
+		 		
+		 		Controller.getInstance().removeItemFavorite(person);
+		 	}
+		 	else
+		 	{
+		 		
+		 		Controller.getInstance().addItemFavorite(person);
+		 	}
+		 		
+
+		 	personsTable.repaint();
+
+		 
+		 }
+	
 	
 	}
 

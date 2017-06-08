@@ -14,6 +14,7 @@ import core.account.PrivateKeyAccount;
 //import javax.swing.JOptionPane;
 
 import core.transaction.Transaction;
+import gui.MainFrame;
 //import lang.Lang;
 import gui.PasswordPane;
 import lang.Lang;
@@ -28,7 +29,7 @@ public class OnDealClick
 		button.setEnabled(false);
 	
 		//CHECK IF NETWORK OK
-		if(Controller.getInstance().getStatus() != Controller.STATUS_OK)
+		if(false && Controller.getInstance().getStatus() != Controller.STATUS_OK)
 		{
 			//NETWORK NOT OK
 			JOptionPane.showMessageDialog(null, Lang.getInstance().translate("You are unable to send a transaction while synchronizing or while having no connections!"), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
@@ -43,7 +44,7 @@ public class OnDealClick
 		if(!Controller.getInstance().isWalletUnlocked())
 		{
 			//ASK FOR PASSWORD
-			String password = PasswordPane.showUnlockWalletDialog(); 
+			String password = PasswordPane.showUnlockWalletDialog(MainFrame.getInstance()); 
 			if(!Controller.getInstance().unlockWallet(password))
 			{
 				//WRONG PASSWORD
@@ -203,9 +204,9 @@ public class OnDealClick
 		case Transaction.INVALID_QUANTITY:
 			mess = "Invalid quantity";
 			break;
-		case Transaction.ASSET_DOES_NOT_EXIST:
-			mess = "asset does not exist";
-			break;
+//		case Transaction.ITEM_ASSET_NOT_EXIST:
+//			mess = "asset does not exist";
+//			break;
 		case Transaction.INVALID_RETURN:
 			mess = "Invalid return";
 			break;
@@ -281,11 +282,14 @@ public class OnDealClick
 		case Transaction.ITEM_DUPLICATE_KEY:
 			mess = "Duplicate key";
 			break;
+		case Transaction.ITEM_DUPLICATE:
+			mess = "Invalid duplicte item";
+			break;
 		case Transaction.INVALID_CREATOR:
 			mess = "Invalis creator";
 			break;
 			
-		case Transaction.ITEM_ASSET_DOES_NOT_EXIST:
+		case Transaction.ITEM_ASSET_NOT_EXIST:
 			mess = "Item asset does not exist";
 			break;
 		case Transaction.ITEM_IMPRINT_DOES_NOT_EXIST:

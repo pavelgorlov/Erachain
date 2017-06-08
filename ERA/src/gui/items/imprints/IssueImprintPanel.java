@@ -277,7 +277,7 @@ public class IssueImprintPanel extends JPanel
 		this.issueButton.setEnabled(false);
 	
 		//CHECK IF NETWORK OK
-		if(Controller.getInstance().getStatus() != Controller.STATUS_OK)
+		if(false && Controller.getInstance().getStatus() != Controller.STATUS_OK)
 		{
 			//NETWORK NOT OK
 			JOptionPane.showMessageDialog(null, Lang.getInstance().translate("You are unable to send a transaction while synchronizing or while having no connections!"), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
@@ -292,7 +292,7 @@ public class IssueImprintPanel extends JPanel
 		if(!Controller.getInstance().isWalletUnlocked())
 		{
 			//ASK FOR PASSWORD
-			String password = PasswordPane.showUnlockWalletDialog(); 
+			String password = PasswordPane.showUnlockWalletDialog(this); 
 			if(!Controller.getInstance().unlockWallet(password))
 			{
 				//WRONG PASSWORD
@@ -324,7 +324,9 @@ public class IssueImprintPanel extends JPanel
 			// CUT BYTES LEN
 			name_total = Imprint.hashNameToBase58(name_total);
 			String description = ""; //this.txtareaDescription.getText();
-						
+
+			byte[] icon = null;
+			byte[] image = null;
 			//CREATE IMPRINT
 			PrivateKeyAccount creator = Controller.getInstance().getPrivateKeyAccountByAddress(sender.getAddress());
 			Pair<Transaction, Integer> result = Controller.getInstance().issueImprint(creator, name_total, description,

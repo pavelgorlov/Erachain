@@ -111,11 +111,20 @@
 	<classpathentry kind="lib" path="libs/jcalendar-1.4.jar"/>
 	<classpathentry kind="lib" path="libs/json-io-4.8.0.jar" sourcepath="libs/sourceandjavadoc/json-io-4.8.0-sources.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/ERM/libs/sourceandjavadoc/json-io-4.8.0-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/ERA/libs/sourceandjavadoc/json-io-4.8.0-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="libs/gson-2.3.1.jar"/>
 	<classpathentry kind="lib" path="libs/txtmark-0.16.jar"/>
 	<classpathentry kind="lib" path="libs/tinycp.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/jai_codec.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/jai_core.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/poi.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/smartjcommon.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/smartjpdfwriter_license.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/smartjpdfwriter.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/smartjreport_demo.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/smartjreport_license.jar"/>
+	<classpathentry kind="lib" path="libs/SmartJReport/smartjreport.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

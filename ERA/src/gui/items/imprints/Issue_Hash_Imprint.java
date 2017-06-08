@@ -81,7 +81,7 @@ public class Issue_Hash_Imprint extends javax.swing.JPanel {
 		this.jButton.setEnabled(false);
 	
 		//CHECK IF NETWORK OK
-		if(Controller.getInstance().getStatus() != Controller.STATUS_OK)
+		if(false && Controller.getInstance().getStatus() != Controller.STATUS_OK)
 		{
 			//NETWORK NOT OK
 			JOptionPane.showMessageDialog(null, Lang.getInstance().translate("You are unable to send a transaction while synchronizing or while having no connections!"), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
@@ -96,7 +96,7 @@ public class Issue_Hash_Imprint extends javax.swing.JPanel {
 		if(!Controller.getInstance().isWalletUnlocked())
 		{
 			//ASK FOR PASSWORD
-			String password = PasswordPane.showUnlockWalletDialog(); 
+			String password = PasswordPane.showUnlockWalletDialog(this); 
 			if(!Controller.getInstance().unlockWallet(password))
 			{
 				//WRONG PASSWORD

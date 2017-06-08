@@ -47,7 +47,7 @@ public class NameStorageResource {
 	public static final String AMOUNT_JSON_KEY = "amount";
 	public static final String PAYMENTS_JSON_KEY = "payments";
 
-	private static final String ERM_ABBREV = AssetCls.ERM_ABBREV;
+	private static final String ERA_ABBREV = AssetCls.ERA_ABBREV;
 	private static final String FEE_ABBREV = AssetCls.FEE_ABBREV;
 
 	@Context
@@ -230,7 +230,7 @@ public class NameStorageResource {
 							paymentAsset = Controller.getInstance().getAsset(new Long(amountAssetJsonObject.get(ASSET_JSON_KEY).toString()));
 						} catch (Exception e) {
 							throw ApiErrorFactory.getInstance().createError(
-									Transaction.ASSET_DOES_NOT_EXIST);
+									Transaction.ITEM_ASSET_NOT_EXIST);
 						}
 					}
 					

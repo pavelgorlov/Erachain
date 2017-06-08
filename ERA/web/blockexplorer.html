@@ -794,18 +794,19 @@ function assets(data)
 	// style="background: #f4f4f4;"
 	
 	var table = '<table width=100% BORDER=0 cellpadding=10 cellspacing=0 class="table table-striped" style="border: 1px solid #ddd;"><tr>';
-	table += '<td><b>'+data.label_table_key+'<td><b>'+data.label_table_asset_name+'<td><b>Operations<td><b>'+ data.label_table_asset_description+'<td><b>'+ data.label_table_asset_creator;
+	table += '<td><b>'+data.label_table_key+'<td><td><b>'+data.label_table_asset_name+'<td><b>Operations<td><b>'+ data.label_table_asset_description+'<td><b>'+ data.label_table_asset_creator;
 	table += '<td><b>'+ data.label_table_asset_movable+'<td><b>'+data.label_table_asset_amount+'<td><b>'+data.label_table_asset_divisible;
 
 	for(key in data.assets) {
 		table += '<tr>';
-		table += '<td>' + key;
-		
-		table += '<td>' + '<a href=?asset='+encodeURIComponent(key)+get_lang()+'>' + htmlFilter(data.assets[key].name) + '</a>';
-		
+		table += '<td> <a href=?asset='+encodeURIComponent(key)+get_lang()+'>';
+		table += '<b>' + key + '</b>: ' + htmlFilter(data.assets[key].name);
+		if (data.assets[key].icon.length>0) table += '<img src="data:image/gif;base64,' + data.assets[key].icon+ '" width="150" /> <br>'; 
+		table += '</a>';
+		 
 		table += '<td>' + data.assets[key].operations;
 	
-		table += '<td>' + htmlFilter(data.assets[key].description);
+		table += '<td>' + data.assets[key].description.substr(0, 100);
 		table += '<td><a href =?addr='+ data.assets[key].owner +get_lang() + '> ' + htmlFilter(data.assets[key].owner) + '</a>';
 		table += '<td>' + htmlFilter(data.assets[key].isMovable);
 		table += '<td>' +data.assets[key].quantity;
@@ -845,6 +846,13 @@ function asset(data)
 	output += '<b>'+ data.asset.label_Key + ':</b> ' + data.asset.this.key;
 	
 	output += '<br><br>';
+	
+	if (data.asset.this.img.length>0) output += '<img src="data:image/gif;base64,' + data.asset.this.img+ '" style=" max-width: 100%;" />'; 
+	
+	if (data.asset.this.icon.length>0) output += '<img src="data:image/gif;base64,' + data.asset.this.icon+ '"  />'; 
+	
+	output += '<br><br>';
+	
 	
 	output += '<b>' + data.asset.label_Creator + ':</b> <a href=?addr='+data.asset.this.owner+get_lang()+'>' + data.asset.this.owner + '</a>';
 	
@@ -3979,7 +3987,7 @@ function Lang_setting(){
       <div class="container-fluid">
         <div class="navbar-header">
           <button type="button" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar" class="navbar-toggle collapsed"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button>
-          	<a href="http://ARONICLE.com" class="navbar-brand"><img src="img/logo_header.png" style="height:35px" alt="" class="logo-header"></a>
+          	<a href="http://erachain.org" class="navbar-brand"><img src="img/logo_header.png" style="height:35px" alt="" class="logo-header"></a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
        <!--    <ul class="nav navbar-nav navbar-right">
@@ -4059,7 +4067,7 @@ function Lang_setting(){
 <table border="0" height=15% width="100%" cellspacing=0 cellpadding=0>
 <tr valign="bottom">
 <td align="center" style='padding-top:15px; padding-bottom:5px;'>
-<a href=http://ARONICLE.com>
+<a href=http://erachain.org>
 	<img border="0" src="img/logo_bottom.png" height="50">
 	<b><span style="font-size:40px;text-shadow:1px 1px 2px black, 0em 0em 0em #00F1FF;"><span style="color:chartreuse;">ER</span><span style="color:gold;">A</span></b>
 </a>

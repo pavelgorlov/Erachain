@@ -72,7 +72,7 @@ public abstract class Transaction {
 
 	// ASSETS
 	public static final int INVALID_QUANTITY = 30;
-	public static final int ASSET_DOES_NOT_EXIST = 31;
+	//public static final int ASSET_DOES_NOT_EXIST = 31;
 	public static final int NEGATIVE_AMOUNT = 32;
 	public static final int INVALID_AMOUNT = 33;
 	public static final int INVALID_RETURN = 34;
@@ -128,7 +128,7 @@ public abstract class Transaction {
 	// ITEMS
 	public static final int INVALID_ITEM_VALUE = 100;
 	public static final int ITEM_DOES_NOT_EXIST = 101;
-	public static final int ITEM_ASSET_DOES_NOT_EXIST = 102;
+	public static final int ITEM_ASSET_NOT_EXIST = 102;
 	public static final int ITEM_IMPRINT_DOES_NOT_EXIST = 103;
 	public static final int ITEM_NOTE_NOT_EXIST = 104;
 	public static final int ITEM_PERSON_NOT_EXIST = 105;
@@ -137,6 +137,7 @@ public abstract class Transaction {
 	public static final int ITEM_DOES_NOT_STATUSED = 108;
 	public static final int ITEM_DOES_NOT_UNITED = 109;
 	public static final int ITEM_DUPLICATE_KEY = 110;
+	public static final int ITEM_DUPLICATE = 111;
 
 	public static final int AMOUNT_DIVISIBLE = 115;
 
@@ -227,7 +228,7 @@ public abstract class Transaction {
 	//public static final int JSON_TRANSACTION = 27;
 
 	// FEE PARAMETERS
-	public static final long RIGHTS_KEY = AssetCls.ERM_KEY;
+	public static final long RIGHTS_KEY = AssetCls.ERA_KEY;
 
 	// FEE PARAMETERS	public static final int FEE_PER_BYTE = 1;
 
@@ -762,6 +763,36 @@ public abstract class Transaction {
 		return transaction;
 	}
 	
+	public abstract JSONObject toJson();
+
+	@SuppressWarnings("unchecked")
+	public JSONObject rawToJson() {
+		
+		JSONObject transaction = new JSONObject();
+		
+		transaction.put("confirmations", this.getConfirmations(DBSet.getInstance()));
+		
+		int height;
+		if (this.creator == null )
+		{
+			height = 1;
+		} else {
+			height = this.getBlockHeight(DBSet.getInstance());
+			transaction.put("publickey", Base58.encode(this.creator.getPublicKey()));
+		}
+
+		transaction.put("height", height);
+		if (height > 0)
+			transaction.put("sequence", this.getSeqNo(DBSet.getInstance()));
+		
+		boolean isSigned = this.signature!=null;
+		transaction.put("signature", isSigned?Base58.encode(this.signature):"null");
+		
+		transaction.put("raw", Base58.encode(this.toBytes(isSigned, null)));
+		
+		return transaction;
+	}
+
 	public void sign(PrivateKeyAccount creator, boolean asPack)
 	{
 		
@@ -782,8 +813,6 @@ public abstract class Transaction {
 			this.calcFee();
 	}
 
-	public abstract JSONObject toJson();
-	
 	// releaserReference == null - not as pack
 	// releaserReference = reference of releaser - as pack
 	public byte[] toBytes(boolean withSign, Long releaserReference) {

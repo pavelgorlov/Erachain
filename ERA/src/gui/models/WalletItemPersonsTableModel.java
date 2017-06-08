@@ -31,7 +31,7 @@ public class WalletItemPersonsTableModel extends TableModelCls<Tuple2<String, St
 	
 	public WalletItemPersonsTableModel()
 	{
-		//Controller.getInstance().addWalletListener(this);
+		Controller.getInstance().addWalletListener(this);
 		addObservers();
 	}
 	

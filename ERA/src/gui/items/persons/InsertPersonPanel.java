@@ -1,5 +1,6 @@
 package gui.items.persons;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
@@ -68,15 +69,18 @@ public class InsertPersonPanel extends IssuePersonPanel{
     protected javax.swing.JPanel jPanel_Paste;
     protected MButton pasteButton;
     
-    
+   
     
     
     //protected IssuePersonRecord issuePersonRecord;
     protected PersonHuman person;
+
+	private InsertPersonPanel th;
 	
 	 public InsertPersonPanel(){
 		
 		super();
+		th = this;
 		
 		init();	
 		this.setMinimumSize(new Dimension(0,0));
@@ -139,7 +143,7 @@ private void init(){
 	copyButton.setVisible(false);
 	
 	
-	iconButton.setVisible(false);
+	add_Image_Panel.setVisible(false);
 	txtGender.setVisible(false);
 	txtGenderTxt.setEditable(false);
 	txtRace.setEditable(false);
@@ -238,7 +242,7 @@ private void init(){
  	 
     
      
-	 pasteButton = new MButton(Lang.getInstance().translate("Paste"),2);
+	 pasteButton = new MButton(Lang.getInstance().translate("Paste Person from clipboard"), 2);
      pasteButton.addActionListener(new ActionListener(){
 
  		@Override
@@ -252,11 +256,16 @@ private void init(){
  			reset();
  			
  			String base58str = getClipboardContents();
- 			byte[] dataPerson = Base58.decode(base58str);
+ 			byte[] dataPerson;
  			try {
+ 	 			dataPerson = Base58.decode(base58str);
  				person = (PersonHuman)PersonFactory.getInstance().parse(dataPerson, false);		
  			} catch (Exception ee) {
- 				return;
+				JOptionPane.showMessageDialog(null, ee.getMessage(), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
+				
+				issueButton.setEnabled(true);
+				copyButton.setEnabled(true);
+				return;
  			}
  			
  			txtName.setText(person.getName());			
@@ -328,9 +337,11 @@ private void init(){
 	
  
   
-     trans_Button = new MButton(Lang.getInstance().translate("Check")+ " & " + Lang.getInstance().translate("Issue"), 2);
+     trans_Button = new MButton(Lang.getInstance().translate("Check Person and insert"), 2);
     
      trans_Button.addActionListener(new ActionListener(){
+
+		
 
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
@@ -342,7 +353,7 @@ private void init(){
 			if(!Controller.getInstance().isWalletUnlocked())
 			{
 				//ASK FOR PASSWORD
-				String password = PasswordPane.showUnlockWalletDialog(); 
+				String password = PasswordPane.showUnlockWalletDialog(th); 
 				if(!Controller.getInstance().unlockWallet(password))
 				{
 					//WRONG PASSWORD
@@ -379,7 +390,7 @@ private void init(){
 					mess = "Invalid fee power 0..6";
 					break;
 				}
-				JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(e + mess), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(mess), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
 				
 				issueButton.setEnabled(true);
 				copyButton.setEnabled(true);
@@ -442,7 +453,7 @@ private void init(){
 		txtHairСolor.setText("");
 		txtHeight.setText("");
 		imgButes = null;
-		iconButton.setIcon(null);
+		add_Image_Panel.reset();
 	
 	}
 
