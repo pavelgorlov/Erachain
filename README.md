@@ -1,11 +1,10 @@
 # Erachain base 
 GIT for the Erachain - legatimate blockchain (blockchain 3.0) project.
 
-* [Website](http://Erachain.org)
-* [Website](http://datachains.world)
-* [API](http://datachainsworld.ru/index.php?topic=121.0)
-* [API](http://datachains.world)
-* [BlockChain Explorer](http://explorer.erachain.org:9047)
+* [Website erachain.org](http://Erachain.org)
+* [Website datachain.world](http://datachains.world)
+* [API forum](http://datachainsworld.ru/index.php?topic=121.0)
+* [BlockChain Explorer](http://explorer.erachain.org:9047/index/blockexplorer.html)
 * [Bitcointalk](https://bitcointalk.org/index.php?topic=1894206.0)
 * [Slack](https://erachain.slack.com/messages/@slackbot/)
 
