@@ -1,6 +1,9 @@
 package database;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.mapdb.Atomic;
@@ -9,6 +12,7 @@ import org.mapdb.DB;
 import core.item.ItemCls;
 //import utils.ObserverMessage;
 import database.DBSet;
+import utils.Pair;
 
 public abstract class Item_Map extends DBMap<Long, ItemCls> 
 {
@@ -35,9 +39,9 @@ public abstract class Item_Map extends DBMap<Long, ItemCls>
 		// restore key from dbase
 		this.key = this.atomicKey.get();
 		
-		this.observableData.put(DBMap.NOTIFY_ADD, observeAdd);
-		this.observableData.put(DBMap.NOTIFY_REMOVE, observeRemove);
-		this.observableData.put(DBMap.NOTIFY_LIST, observeList);
+		if (observeAdd !=0 )this.observableData.put(DBMap.NOTIFY_ADD, observeAdd);
+		if (observeRemove !=0 )this.observableData.put(DBMap.NOTIFY_REMOVE, observeRemove);
+		if (observeList != 0) this.observableData.put(DBMap.NOTIFY_LIST, observeList);
 	}
 
 	
@@ -126,5 +130,21 @@ public abstract class Item_Map extends DBMap<Long, ItemCls>
 		 
 		} while ( !super.map.containsKey(key)  || key == 0l );
 		 
+	}
+	
+	// get list items in name substring str
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<ItemCls> get_By_Name(String str)
+	{
+	List<ItemCls> txs = new ArrayList<>();
+		if (str.equals("") || str == null) return null;
+		Iterator<Pair<Long, ItemCls>> it = this.getList().iterator();
+		while (it.hasNext()){
+			Pair<Long, ItemCls> a = it.next();
+			if (a.getB().getName().contains(str))txs.add(a.getB());
+			
+		}
+		
+		return txs;
 	}
 }

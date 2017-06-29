@@ -196,7 +196,7 @@ public class IssueUnionPanel extends JPanel
 				feePow);
 		//Issue_Asset_Confirm_Dialog cont = new Issue_Asset_Confirm_Dialog(issueAssetTransaction);
 		 String text = "<HTML><body>";
-		 	text += Lang.getInstance().translate("Confirmation Transaction") + ":&nbsp;"  + Lang.getInstance().translate("Issue Asset") + "<br><br><br>";
+		 	text += Lang.getInstance().translate("Confirmation Transaction") + ":&nbsp;"  + Lang.getInstance().translate("Issue Union") + "<br><br><br>";
 		    text += Lang.getInstance().translate("Creator") +":&nbsp;"  + issue_Union.getCreator() +"<br>";
 		    text += Lang.getInstance().translate("Name") +":&nbsp;"+ issue_Union.getItem().getName() +"<br>";
 		   text += Lang.getInstance().translate("Description")+":<br>"+ library.to_HTML(issue_Union.getItem().getDescription())+"<br>";
@@ -211,7 +211,7 @@ public class IssueUnionPanel extends JPanel
 		
 	//	int s = JOptionPane.showConfirmDialog(MainFrame.getInstance(), text, Lang.getInstance().translate("Issue Asset"),  JOptionPane.YES_NO_OPTION);
 		
-		Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(MainFrame.getInstance(), true,text, (int) (th.getWidth()/1.2), (int) (th.getHeight()/1.2),Status_text);
+		Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(MainFrame.getInstance(), true,text, (int) (th.getWidth()/1.2), (int) (th.getHeight()/1.2),Status_text, Lang.getInstance().translate("Confirmation Transaction"));
 		dd.setLocationRelativeTo(th);
 		dd.setVisible(true);
 		

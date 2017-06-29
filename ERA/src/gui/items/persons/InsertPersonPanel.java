@@ -1,50 +1,35 @@
 package gui.items.persons;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.sql.Date;
 import java.util.TimeZone;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
-
-import com.toedter.calendar.JDateChooser;
-
 import controller.Controller;
-import core.BlockChain;
 import core.account.Account;
 import core.account.PrivateKeyAccount;
-import core.account.PublicKeyAccount;
 import core.crypto.Base58;
-import core.item.persons.PersonCls;
 import core.item.persons.PersonFactory;
 import core.item.persons.PersonHuman;
 import core.transaction.IssuePersonRecord;
 import core.transaction.Transaction;
-import core.transaction.TransactionFactory;
+import gui.MainFrame;
 import gui.PasswordPane;
+import gui.library.Issue_Confirm_Dialog;
 import gui.library.MButton;
+import gui.transaction.IssuePersonDetailsFrame;
 import gui.transaction.OnDealClick;
 import lang.Lang;
-import settings.Settings;
 import utils.Pair;
 
 public class InsertPersonPanel extends IssuePersonPanel{
@@ -83,6 +68,11 @@ public class InsertPersonPanel extends IssuePersonPanel{
 		th = this;
 		
 		init();	
+		alive_CheckBox.setSelected(false);
+		alive_CheckBox.setVisible(false);
+	//	jLabel_Dead.setVisible(false);
+	//	txtDeathdayTxt.setVisible(false);
+		
 		this.setMinimumSize(new Dimension(0,0));
 	}
 	
@@ -105,7 +95,6 @@ public class InsertPersonPanel extends IssuePersonPanel{
 	    return result;
 	  }
 	 
-@SuppressWarnings("deprecation")
 private void init(){
 	
 	
@@ -124,7 +113,7 @@ private void init(){
 	//txtBirthday = new javax.swing.JTextField();
 	//txtDeathday = new javax.swing.JTextField();
 
-   	txtRace.setText("");
+   	txtSNILS.setText("");
    	this.txtBirthLatitude.setText("");
    	this.txtBirthLongitude.setText("");
    	this.txtHeight.setText("");
@@ -137,8 +126,9 @@ private void init(){
 	txtareaDescription.setEditable(false);
 	txtBirthday.setVisible(false); //setEnabled(false);
 	txtDeathday.setVisible(false); //setEnabled(false);
-	txtBirthdayTxt.setEnabled(false);
-	txtDeathdayTxt.setEnabled(false);
+	txtBirthdayTxt.setEditable(false);
+	txtDeathdayTxt.setVisible(false);
+	txtDeathdayTxt.setEditable(false);
 	
 	copyButton.setVisible(false);
 	
@@ -146,7 +136,7 @@ private void init(){
 	add_Image_Panel.setVisible(false);
 	txtGender.setVisible(false);
 	txtGenderTxt.setEditable(false);
-	txtRace.setEditable(false);
+	txtSNILS.setEditable(false);
 	txtBirthLatitude.setEditable(false);
 	txtBirthLongitude.setEditable(false);
 	txtSkinColor.setEditable(false);
@@ -293,10 +283,14 @@ private void init(){
 
  			///txtBirthdayTxt.setText(new Date(person.getBirthday())+ "");
  			txtBirthdayTxt.setText(person.getBirthdayStr());
- 			long dayTimestamp = person.getDeathday();
- 			if ( dayTimestamp/10 > person.getBirthday()/10) {
+ 			txtDeathdayTxt.setText(person.getDeathdayStr());
+ 			//	if ( dayTimestamp/10 > person.getBirthday()/10) {
+ 			txtDeathdayTxt.setVisible(false);
+				jLabel_Dead.setVisible(false);
+ 			if (person.getBirthday() < person.getDeathday()){
  				//txtDeathdayTxt.setText(new Date(person.getDeathday())+"");
- 				txtDeathdayTxt.setText(person.getDeathdayStr());
+ 				txtDeathdayTxt.setVisible(true);
+ 				jLabel_Dead.setVisible(true);
  			}
  			TimeZone.setDefault(tz);
  
@@ -307,7 +301,7 @@ private void init(){
  			
  			
  			if (person.getRace() != null)
- 				txtRace.setText(person.getRace());
+ 				txtSNILS.setText(person.getRace());
  			txtBirthLatitude.setText("" + person.getBirthLatitude() +", " + person.getBirthLongitude());
  			//txtBirthLongitude.setText("" + person.getBirthLongitude());
  			if (person.getSkinColor()!= null)
@@ -317,6 +311,8 @@ private void init(){
  			if (person.getHairСolor() != null)
  				txtHairСolor.setText(person.getHairСolor());
  			txtHeight.setText("" + person.getHeight());
+ 			
+ 				
 
  			
  			txt_Sign.setText(Base58.encode(person.getOwnerSignature()));
@@ -399,19 +395,42 @@ private void init(){
 
 			// TODO Auto-generated method stub
 			PrivateKeyAccount creator = Controller.getInstance().getPrivateKeyAccountByAddress(creatorAccount.getAddress());
-			//PublicKeyAccount owner = (PublicKeyAccount)creator;
 			Pair<Transaction, Integer> result = Controller.getInstance().issuePersonHuman(
 					creator, feePow, person);
 			
 			//CHECK VALIDATE MESSAGE
 			if (result.getB() == Transaction.VALIDATE_OK) {
-			
-				JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(
-						"Person issue has been sent!"),
-						Lang.getInstance().translate("Success"), JOptionPane.INFORMATION_MESSAGE);
-				reset();
+				 String Status_text = "<HTML>"+ Lang.getInstance().translate("Size")+":&nbsp;"+ result.getA().viewSize(true)+" Bytes, ";
+				    Status_text += "<b>" +Lang.getInstance().translate("Fee")+":&nbsp;"+ result.getA().getFee().toString()+" COMPU</b><br></body></HTML>";
+				    
+			//	  System.out.print("\n"+ text +"\n");
+			//	    UIManager.put("OptionPane.cancelButtonText", "Отмена");
+			//	    UIManager.put("OptionPane.okButtonText", "Готово");
 				
-			} else {		
+			//	int s = JOptionPane.showConfirmDialog(MainFrame.getInstance(), text, Lang.getInstance().translate("Issue Asset"),  JOptionPane.YES_NO_OPTION);
+				
+				Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(MainFrame.getInstance(), true," ", (int) (th.getWidth()/1.2), (int) (th.getHeight()/1.2),Status_text, Lang.getInstance().translate("Confirmation Transaction") +" " + Lang.getInstance().translate("Issue Person"));
+			
+				IssuePersonDetailsFrame ww = new IssuePersonDetailsFrame((IssuePersonRecord) result.getA());
+			//	ww.jPanel2.setVisible(false);
+				dd.jScrollPane1.setViewportView(ww);
+				dd.setLocationRelativeTo(th);
+				dd.setVisible(true);
+//				JOptionPane.OK_OPTION
+					if (dd.isConfirm){ //s!= JOptionPane.OK_OPTION)	{
+						//VALIDATE AND PROCESS
+						Integer result1 = Controller.getInstance().getTransactionCreator().afterCreate(result.getA(), false);
+						if (result1 != Transaction.VALIDATE_OK){
+								JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(OnDealClick.resultMess(result1)), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
+						}
+						else{
+							JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(
+									"Person issue has been sent!"),
+									Lang.getInstance().translate("Success"), JOptionPane.INFORMATION_MESSAGE);
+							
+						}
+						}	
+				} else {		
 				JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(OnDealClick.resultMess(result.getB())), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
 			}
 			
@@ -445,7 +464,7 @@ private void init(){
 		
 		txtGender.setSelectedIndex(2);
 		txtGenderTxt.setText("");
-		txtRace.setText("");
+		txtSNILS.setText("");
 		txtBirthLatitude.setText("");
 		txtBirthLongitude.setText("");
 		txtSkinColor.setText("");

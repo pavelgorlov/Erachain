@@ -85,6 +85,7 @@ import database.DBSet;
 import database.Item_Map;
 import database.LocalDataMap;
 import database.SortableList;
+import gui.AboutFrame;
 import gui.Gui;
 import gui.library.My_JFileChooser;
 import lang.Lang;
@@ -119,7 +120,7 @@ public class Controller extends Observable {
 	// IF new abilities is made - new license insert in CHAIN and set this KEY
 	public static final long LICENSE_KEY = 1006l;
 	public static final String APP_NAME = BlockChain.DEVELOP_USE?"ERA-DEVELOP":"ERA";
-	private static final String version = "3.04.01";
+	private static final String version = "3.04.04";
 	private static final String buildTime = "2017-05-21 15:33:33 UTC";
 	private static long buildTimestamp;
 	
@@ -159,6 +160,9 @@ public class Controller extends Observable {
 
 
 	private JSONObject Setting_Json;
+
+
+	private AboutFrame about_frame;
 
 	public boolean isProcessingWalletSynchronize() {
 		return processingWalletSynchronize;
@@ -338,7 +342,7 @@ public class Controller extends Observable {
 	public void start() throws Exception {
 		
 		this.toOfflineTime = NTP.getTime();
-		
+		about_frame = AboutFrame.getInstance();
 		this.foundMyselfID = new byte[128];
 		this.random.nextBytes(this.foundMyselfID);
 		
@@ -393,6 +397,7 @@ public class Controller extends Observable {
 						FileUtils.copyDirectory(dataBak, dataDir);
 						 
 						LOGGER.error(Lang.getInstance().translate("restoring backup database"));
+						about_frame.set_console_Text(Lang.getInstance().translate("restoring backup database"));
 				}else {
 					dataDir.delete();
 									
@@ -404,6 +409,7 @@ public class Controller extends Observable {
 			}
 			
 			if(js.equals("Restore_DataBak")){
+				about_frame.set_console_Text(Lang.getInstance().translate("restoring backup database"));
 				File dataDir = new File(Settings.getInstance().getDataDir());
 				File dataBak = getDataBakDir(dataDir);
 				if (dataDir.exists()) dataDir.delete();
@@ -415,6 +421,7 @@ public class Controller extends Observable {
 		// OPENING DATABASES
 		try {
 			this.dbSet = DBSet.getInstance();
+			about_frame.set_console_Text(Lang.getInstance().translate("Open database"));
 		} catch (Throwable e) {
 			LOGGER.error(e.getMessage(),e);
 			LOGGER.error(Lang.getInstance().translate("Error during startup detected trying to restore backup database..."));
@@ -431,8 +438,7 @@ public class Controller extends Observable {
 			}
 			reCreateDB();
 		}
-		
-		
+		about_frame.set_console_Text(Lang.getInstance().translate("Database Ok"));
 		createDataCheckpoint();
 		Setting_Json.put("DB_OPEN", "Open OK");
 		// save setting to setting file
@@ -482,17 +488,20 @@ public class Controller extends Observable {
 		
 		// START API SERVICE
 		if (Settings.getInstance().isRpcEnabled()) {
+			about_frame.set_console_Text(Lang.getInstance().translate("Start API Service"));
 			this.rpcService = new ApiService();
 			this.rpcService.start();
 		}
 
 		// START WEB SERVICE
 		if (Settings.getInstance().isWebEnabled()) {
+			about_frame.set_console_Text(Lang.getInstance().translate("Start WEB Servoce"));
 			this.webService = new WebService();
 			this.webService.start();
 		}
 
 		// CREATE WALLET
+		about_frame.set_console_Text(Lang.getInstance().translate("Open Wallet"));
 		this.wallet = new Wallet();
 
 	    if(this.wallet.isWalletDatabaseExisting()){
@@ -505,7 +514,7 @@ public class Controller extends Observable {
 		
 		// CREATE BLOCKGENERATOR
 		this.blockGenerator = new BlockGenerator(true);
-		// START BLOCKGENERATOR
+		// START UPDATES and BLOCK BLOCKGENERATOR
 		this.blockGenerator.start();
 
 		// CREATE NETWORK
@@ -520,30 +529,34 @@ public class Controller extends Observable {
 		});
 		
 		
-		//TIMER TO SEND HEIGHT TO NETWORK EVERY 5 MIN 
+		if (false) {
+			//TIMER TO SEND HEIGHT TO NETWORK EVERY 5 MIN 
+			
+			this.timerPeerHeightUpdate.cancel();
+			this.timerPeerHeightUpdate = new Timer();
+			
+			TimerTask action = new TimerTask() {
+		        public void run() {
+		        	
+		        	if(Controller.getInstance().getStatus() == STATUS_OK)
+		        	{
+			        	List<Peer> peers = Controller.getInstance().getActivePeers();
+			        	int peersCounter = peers.size();
+		        		if( peersCounter > 0)
+		        		{
+		        			Peer peer = peers.get(random.nextInt(peers.size()));
+		        			if(peer != null){
+		        				Controller.getInstance().sendMyHWeightToPeer(peer);
+		        			}
+		        		}
+		        	}
+		        }
+			};
+			
+			this.timerPeerHeightUpdate.schedule(action, 
+					Block.GENERATING_MIN_BLOCK_TIME>>4, Block.GENERATING_MIN_BLOCK_TIME>>2);
+		}
 		
-		this.timerPeerHeightUpdate.cancel();
-		this.timerPeerHeightUpdate = new Timer();
-		
-		TimerTask action = new TimerTask() {
-	        public void run() {
-	        	if(Controller.getInstance().getStatus() == STATUS_OK)
-	        	{
-	        		if(Controller.getInstance().getActivePeers().size() > 0)
-	        		{
-	        			Peer peer = Controller.getInstance().getActivePeers().get(
-	        				random.nextInt( Controller.getInstance().getActivePeers().size() )
-	        				);
-	        			if(peer != null){
-	        				Controller.getInstance().sendMyHWeightToPeer(peer);
-	        			}
-	        		}
-	        	}
-	        }
-		};
-		
-		this.timerPeerHeightUpdate.schedule(action, 
-				Block.GENERATING_MIN_BLOCK_TIME>>4, Block.GENERATING_MIN_BLOCK_TIME>>2);
 
 		if( Settings.getInstance().isTestnet()) 
 			this.status = STATUS_OK;
@@ -789,6 +802,9 @@ public class Controller extends Observable {
 
 	private boolean isStopping = false;
 
+
+	private String info;
+
 	public boolean isOnStopping() {
 		return this.isStopping;
 	}
@@ -857,6 +873,11 @@ public class Controller extends Observable {
 	public List<Peer> getActivePeers() {
 		// GET ACTIVE PEERS
 		return this.network.getActivePeers(false);
+	}
+
+	public int getActivePeersCounter() {
+		// GET ACTIVE PEERS
+		return this.network.getActivePeersCounter(false);
 	}
 
 	public void walletSyncStatusUpdate(int height) {
@@ -1164,9 +1185,12 @@ public class Controller extends Observable {
 
 				// ASK BLOCK FROM BLOCKCHAIN
 				newBlock = blockWinMessage.getBlock();
-				LOGGER.debug("mess from " + blockWinMessage.getSender().getAddress());
-				LOGGER.debug(" received new WIN Block " + newBlock.toString(dbSet));
-
+				info = "mess from " + blockWinMessage.getSender().getAddress();
+				LOGGER.debug(info);
+				about_frame.set_console_Text(info);
+				info = " received new WIN Block " + newBlock.toString(dbSet);
+				LOGGER.debug(info);
+				about_frame.set_console_Text(info);
 				
 				Block lastBlock = this.blockChain.getLastBlock(dbSet);
 				byte[] lastBlockReference = lastBlock.getReference();
@@ -1249,7 +1273,7 @@ public class Controller extends Observable {
 				if (newBlockHeight < 1) {
 					// BLOCK NOT FOUND!!!
 					String mess = "Block NOT FOUND on NODE" + ": " + message.getSender().getAddress().getHostAddress();
-					banPeerOnError(message.getSender(), mess);
+					//banPeerOnError(message.getSender(), mess);
 					return;
 				}
 
@@ -1407,7 +1431,10 @@ public class Controller extends Observable {
 	}
 
 	public void banPeerOnError(Peer peer, String mess) {
-		this.network.tryDisconnect(peer, 30, "ban PeerOnError - " + mess);
+		if ( Settings.getInstance().getMaxConnections() - this.network.getActivePeersCounter(false) < 1 ) {
+			// BAN if ALL connection USED
+			this.network.tryDisconnect(peer, 30, "ban PeerOnError - " + mess);			
+		}
 	}
 
 	public void addActivePeersObserver(Observer o) {
@@ -1499,7 +1526,11 @@ public class Controller extends Observable {
 			return false;
 		}
 
-		Tuple3<Integer, Long, Peer> maxHW = this.getMaxPeerHWeight();
+		if (isStopping)
+			return true;
+		
+		// withWinBuffer
+		Tuple3<Integer, Long, Peer> maxHW = this.getMaxPeerHWeight(true);
 		if (maxHW.c == null)
 			return true;
 		
@@ -1590,16 +1621,21 @@ public class Controller extends Observable {
 			// WHILE NOT UPTODATE
 			do {
 				// START UPDATE FROM HIGHEST HEIGHT PEER
-				Tuple3<Integer, Long, Peer> peerHW = this.getMaxPeerHWeight();				
+				// withWinBuffer = true
+				Tuple3<Integer, Long, Peer> peerHW = this.getMaxPeerHWeight(true);				
 				if (peerHW != null) {
 					peer = peerHW.c;
 					if (peer != null) {
-						LOGGER.info("update from MaxHeightPeer:" + peer.getAddress().getHostAddress()
-								+ " WH: " + getHWeightOfPeer(peer));
-
+						info = "update from MaxHeightPeer:" + peer.getAddress().getHostAddress()
+								+ " WH: " + getHWeightOfPeer(peer);
+						LOGGER.info(info);
+						about_frame.set_console_Text(info);
 						// SYNCHRONIZE FROM PEER
 						this.synchronizer.synchronize(dbSet, checkPointHeight, peer);						
 					}
+
+					blockchainSyncStatusUpdate(getMyHeight());
+					
 				}
 			} while (!dbSet.isStoped() && !this.isUpToDate());
 			
@@ -1675,12 +1711,12 @@ public class Controller extends Observable {
 	}
 	*/
 
-	public Tuple3<Integer, Long, Peer> getMaxPeerHWeight() {
+	public Tuple3<Integer, Long, Peer> getMaxPeerHWeight(boolean withWinBuffer) {
 		
 		if (this.dbSet.isStoped())
 			return null;
 		
-		Tuple2<Integer, Long> myHWeight = this.getMyHWeight(false);
+		Tuple2<Integer, Long> myHWeight = this.getMyHWeight(withWinBuffer);
 		int height = myHWeight.a;
 		long weight = myHWeight.b;
 		Peer maxPeer = null;
@@ -2095,6 +2131,10 @@ public class Controller extends Observable {
 
 	public void onDatabaseCommit() {
 		this.wallet.commit();
+	}
+
+	public void startBlockGenerator() {
+		this.blockGenerator.start();
 	}
 
 	public ForgingStatus getForgingStatus() {
@@ -2546,11 +2586,11 @@ public class Controller extends Observable {
 		}
 	}
 
-	public Pair<Transaction, Integer> createOrder(PrivateKeyAccount creator,
+	public Transaction createOrder(PrivateKeyAccount creator,
 			AssetCls have, AssetCls want, BigDecimal amountHave, BigDecimal amountWant,
 			int feePow) {
 		// CREATE ONLY ONE TRANSACTION AT A TIME
-		synchronized (this.transactionCreator) {
+		synchronized (this.transactionCreator) { 
 			return this.transactionCreator.createOrderTransaction(creator,
 					have, want, amountHave, amountWant, feePow);
 		}
@@ -2584,14 +2624,14 @@ public class Controller extends Observable {
 		}
 	}
 
-	public Pair<Transaction, Integer> r_Send(PrivateKeyAccount sender,
+	public Transaction r_Send(PrivateKeyAccount sender,
 			int feePow, Account recipient, long key, BigDecimal amount) {
 		synchronized (this.transactionCreator) {
 			return this.r_Send(sender, feePow, recipient,
 					key, amount, "", null, null, null);
 		}
 	}
-	public Pair<Transaction, Integer> r_Send(PrivateKeyAccount sender,
+	public Transaction r_Send(PrivateKeyAccount sender,
 			int feePow, Account recipient, long key,BigDecimal amount,
 			String head, byte[] isText, byte[] message, byte[] encryptMessage) {
 		synchronized (this.transactionCreator) {
@@ -2599,7 +2639,7 @@ public class Controller extends Observable {
 					key, amount, feePow, head, message, isText, encryptMessage);
 		}
 	}
-	public Pair<Transaction, Integer> r_Send(byte version, byte property1, byte property2, 
+	public Transaction r_Send(byte version, byte property1, byte property2, 
 			PrivateKeyAccount sender,
 			int feePow, Account recipient, long key,BigDecimal amount,
 			String head, byte[] isText, byte[] message, byte[] encryptMessage) {
@@ -2619,7 +2659,7 @@ public class Controller extends Observable {
 		}
 	}
 
-	public Pair<Transaction, Integer> r_SertifyPerson(int version, boolean asPack, PrivateKeyAccount creator,
+	public Transaction r_SertifyPerson(int version, boolean asPack, PrivateKeyAccount creator,
 			int feePow, long key,
 			List<PublicKeyAccount> userAccounts, int add_day) {
 		synchronized (this.transactionCreator) {
@@ -2629,7 +2669,7 @@ public class Controller extends Observable {
 		}
 	}
 
-	public Pair<Transaction, Integer> r_Vouch(int version, boolean asPack,
+	public Transaction r_Vouch(int version, boolean asPack,
 			PrivateKeyAccount creator, int feePow,
 			int height, int seq) {
 		synchronized (this.transactionCreator) {
@@ -2672,7 +2712,7 @@ public class Controller extends Observable {
 	}
 	*/
 	// ver2 
-	public Pair<Transaction, Integer> r_SetStatusToItem(int version, boolean asPack, PrivateKeyAccount creator,
+	public Transaction r_SetStatusToItem(int version, boolean asPack, PrivateKeyAccount creator,
 			int feePow, long key,
 			ItemCls item, Long beg_date, Long end_date,
 			long value_1, long value_2, byte[] data_1, byte[] data_2, long refParent, byte[] description

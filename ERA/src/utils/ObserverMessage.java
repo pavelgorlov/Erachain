@@ -17,6 +17,11 @@ public class ObserverMessage {
 	public static final int ADD_ACCOUNT_TYPE = 10;
 	public static final int REMOVE_ACCOUNT_TYPE = 11;
 	
+	
+	public static final int LIST_ALL_ACCOUNT_TYPE = 11002;
+	public static final int REMOVE_ALL_ACCOUNT_TYPE = 11001;
+	public static final int ADD_ALL_ACCOUNT_TYPE = 11000;
+	
 	public static final int WALLET_STATUS = 12;
 	public static final int NETWORK_STATUS = 13;
 	
@@ -36,6 +41,7 @@ public class ObserverMessage {
 	public static final int REMOVE_ASSET_TYPE = 24;
 	public static final int LIST_ASSET_TYPE = 25;
 	
+	
 	public static final int ADD_ORDER_TYPE = 26;
 	public static final int REMOVE_ORDER_TYPE = 27;
 	public static final int LIST_ORDER_TYPE = 28;
@@ -49,6 +55,8 @@ public class ObserverMessage {
 	public static final int LIST_BALANCE_TYPE = 34;
 	
 	public static final int LIST_ASSET_FAVORITES_TYPE = 35;
+	public static final int ADD_ASSET_FAVORITES_TYPE = 35001;
+	public static final int DELETE_ASSET_FAVORITES_TYPE = 35002;
 	
 	public static final int FORGING_STATUS = 36;
 
@@ -76,11 +84,14 @@ public class ObserverMessage {
 	public static final int REMOVE_PERSON_TYPE = 54;
 	public static final int LIST_PERSON_TYPE = 55;
 	public static final int LIST_PERSON_FAVORITES_TYPE = 56;
+	public static final int ADD_PERSON_FAVORITES_TYPE = 56001;
+	public static final int DELETE_PERSON_FAVORITES_TYPE = 56002;
 
 	public static final int ADD_STATUS_TYPE = 57;
 	public static final int REMOVE_STATUS_TYPE = 58;
 	public static final int LIST_STATUS_TYPE = 59;
 	public static final int LIST_STATUS_FAVORITES_TYPE = 60;
+	
 
 	public static final int ADD_UNION_TYPE = 61;
 	public static final int REMOVE_UNION_TYPE = 62;
@@ -91,6 +102,7 @@ public class ObserverMessage {
 	public static final int REMOVE_ASSET_STATUS_TYPE = 66;
 	public static final int LIST_ASSET_STATUS_TYPE = 67;
 	public static final int LIST_ASSET_STATUS_FAVORITES_TYPE = 68;
+	
 
 	public static final int ADD_PERSON_STATUS_TYPE = 69;
 	public static final int REMOVE_PERSON_STATUS_TYPE = 70;
@@ -130,7 +142,10 @@ public class ObserverMessage {
 	public static final int ADD_STATEMENT_TYPE = 97;
 	public static final int REMOVE_STATEMENT_TYPE = 98;
 	public static final int LIST_STATEMENT_TYPE = 99;
-	public static final int LIST_STATEMENT_FAVORITES_TYPE = 100;
+	public static final int LIST_STATEMENT_FAVORITES_TYPE =   100000;
+	public static final int ADD_STATEMENT_FAVORITES_TYPE =    100001;
+	public static final int DELETE_STATEMENT_FAVORITES_TYPE = 100002;
+	
 	
 	public static final int ADD_VOUCH_TYPE = 101;
 	public static final int REMOVE_VOUCH_TYPE = 102;

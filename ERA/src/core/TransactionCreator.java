@@ -379,7 +379,7 @@ public class TransactionCreator
 		//VALIDATE AND PROCESS
 		if (forIssue) {
 			boolean asPack = false;
-			return new Pair<Transaction, Integer>(issuePersonRecord, this.afterCreate(issuePersonRecord, asPack));
+			return new Pair<Transaction, Integer>(issuePersonRecord, 1);//this.afterCreate(issuePersonRecord, asPack));
 		} else {
 			// for COPY -
 			int valid = issuePersonRecord.isValid(DBSet.getInstance(), lastReference);
@@ -423,7 +423,7 @@ public class TransactionCreator
 		
 		//VALIDATE AND PROCESS
 		boolean asPack = false;
-		return new Pair<Transaction, Integer>(issuePersonRecord, this.afterCreate(issuePersonRecord, asPack));
+		return new Pair<Transaction, Integer>(issuePersonRecord, 1);
 		
 	}
 
@@ -466,7 +466,7 @@ public class TransactionCreator
 		
 	}
 
-	public Pair<Transaction, Integer> createOrderTransaction(PrivateKeyAccount creator, AssetCls have, AssetCls want, BigDecimal amountHave, BigDecimal amounWant, int feePow)
+	public Transaction createOrderTransaction(PrivateKeyAccount creator, AssetCls have, AssetCls want, BigDecimal amountHave, BigDecimal amounWant, int feePow)
 	{
 		//CHECK FOR UPDATES
 		this.checkUpdate();
@@ -479,12 +479,12 @@ public class TransactionCreator
 		
 		int res = createOrderTransaction.isValid(this.fork, null);
 		if (res != Transaction.VALIDATE_OK)
-			return new Pair<Transaction, Integer>(null, res);
+			return null;
 				
 		//VALIDATE AND PROCESS
 		createOrderTransaction.sign(creator, false);
 		
-		return new Pair<Transaction, Integer>(createOrderTransaction, this.afterCreate(createOrderTransaction, false));
+		return createOrderTransaction;
 	}
 		
 	public Pair<Transaction, Integer> createCancelOrderTransaction(PrivateKeyAccount creator, Order order, int feePow)
@@ -535,7 +535,9 @@ public class TransactionCreator
 		
 	}
 	
-	public Pair<Transaction, Integer> r_Send(PrivateKeyAccount creator,
+	//public Pair<Transaction, Integer> r_Send(PrivateKeyAccount creator,
+	
+	public Transaction r_Send(PrivateKeyAccount creator,
 			Account recipient, long key, BigDecimal amount, int feePow, String head, byte[] isText,
 			byte[] message, byte[] encryptMessage) {
 		
@@ -549,10 +551,10 @@ public class TransactionCreator
 		messageTx = new R_Send(creator, (byte)feePow, recipient, key, amount, head, message, isText, encryptMessage, timestamp, creator.getLastReference(this.fork));
 		messageTx.sign(creator, false);
 			
-		return new Pair<Transaction, Integer>(messageTx, afterCreate(messageTx, false));
+		return messageTx;// new Pair<Transaction, Integer>(messageTx, afterCreate(messageTx, false));
 	}
 
-	public Pair<Transaction, Integer> r_Send(byte version, byte property1, byte property2,
+	public Transaction r_Send(byte version, byte property1, byte property2,
 			PrivateKeyAccount creator,
 			Account recipient, long key, BigDecimal amount, int feePow, String head, byte[] isText,
 			byte[] message, byte[] encryptMessage) {
@@ -567,7 +569,7 @@ public class TransactionCreator
 		messageTx = new R_Send(version, property1, property2, creator, (byte)feePow, recipient, key, amount, head, message, isText, encryptMessage, timestamp, creator.getLastReference(this.fork));
 		messageTx.sign(creator, false);
 			
-		return new Pair<Transaction, Integer>(messageTx, afterCreate(messageTx, false));
+		return messageTx;
 	}
 	
 	public Transaction r_SignNote(byte version, byte property1, byte property2, 
@@ -588,7 +590,7 @@ public class TransactionCreator
 	
 	}
 
-	public Pair<Transaction, Integer> r_SertifyPerson(int version, boolean asPack,
+	public Transaction r_SertifyPerson(int version, boolean asPack,
 			PrivateKeyAccount creator, int feePow, long key,
 			List<PublicKeyAccount> userAccounts,
 			int add_day) {
@@ -606,10 +608,10 @@ public class TransactionCreator
 				add_day,  timestamp, creator.getLastReference(this.fork));
 		record.sign(creator, asPack);
 			
-		return new Pair<Transaction, Integer>(record, afterCreate(record, asPack));
+		return record;
 	}
 
-	public Pair<Transaction, Integer> r_Vouch(int version, boolean asPack,
+	public Transaction r_Vouch(int version, boolean asPack,
 			PrivateKeyAccount creator, int feePow,
 			int height, int seq) {
 		
@@ -626,7 +628,7 @@ public class TransactionCreator
 				timestamp, creator.getLastReference(this.fork));
 		record.sign(creator, asPack);
 			
-		return new Pair<Transaction, Integer>(record, afterCreate(record, asPack));
+		return record;
 	}
 
 	public Pair<Transaction, Integer> r_Hashes(PrivateKeyAccount creator, int feePow,
@@ -693,7 +695,7 @@ public class TransactionCreator
 	*/
 	
 	// version 2
-	public Pair<Transaction, Integer> r_SetStatusToItem(int version, boolean asPack,
+	public Transaction r_SetStatusToItem(int version, boolean asPack,
 			PrivateKeyAccount creator, int feePow, long key, ItemCls item,
 			Long beg_date, Long end_date,
 			long value_1, long value_2, byte[] data_1, byte[] data_2, long refParent, byte[] descr
@@ -712,7 +714,7 @@ public class TransactionCreator
 				timestamp, creator.getLastReference(this.fork));
 		record.sign(creator, asPack);
 			
-		return new Pair<Transaction, Integer>(record, afterCreate(record, asPack));
+		return  record;
 	}
 
 	/*

@@ -160,6 +160,17 @@ public abstract class TransactionAmount extends Transaction {
 		return getAmount(address);
 	}
 	
+	public int getActionType() {
+		int type = core.account.Account.actionType(this.key, this.amount);
+		return type * (isBackward()?-1:1);
+	}
+	
+	// BACKWARD AMOUNT
+	public boolean isBackward() {
+		return typeBytes[1] == 1
+			|| typeBytes[1] > 1 && (typeBytes[2] & BACKWARD_MASK) > 0;
+	}
+
 	@Override
 	public String viewAmount(Account account) {
 		String address = account.getAddress();
@@ -170,10 +181,10 @@ public abstract class TransactionAmount extends Transaction {
 		return NumberAsString.getInstance().numberAsString(getAmount(address));
 	}
 
-	public String viewSendType() {
+	public String viewActionType() {
 		int amo_sign = this.amount.compareTo(BigDecimal.ZERO);
 		
-		if ((this.typeBytes[2] & BACKWARD_MASK) > 0) {
+		if (this.isBackward()) {
 			if (this.key > 0) {
 				if (amo_sign > 0) {
 					return "backward PROPERTY";

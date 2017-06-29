@@ -253,7 +253,7 @@ public class Create_Voting_Panel extends JPanel
 
 			//Issue_Asset_Confirm_Dialog cont = new Issue_Asset_Confirm_Dialog(issueAssetTransaction);
 			 String text = "<HTML><body>";
-			 	text += Lang.getInstance().translate("Confirmation Transaction") + ":&nbsp;"  + Lang.getInstance().translate("Issue Asset") + "<br><br><br>";
+			 	text += Lang.getInstance().translate("Confirmation Transaction") + ":&nbsp;" + Lang.getInstance().translate("Issue Voting") + "<br><br><br>";
 			    text += Lang.getInstance().translate("Creator") +":&nbsp;"  + issue_voiting.getCreator() +"<br>";
 			    text += Lang.getInstance().translate("Name") +":&nbsp;"+ poll.getName() +"<br>";
 			   text += "<br>"+Lang.getInstance().translate("Description")+":<br>"+ library.to_HTML(poll.getDescription())+"<br>";
@@ -277,7 +277,7 @@ public class Create_Voting_Panel extends JPanel
 			
 		//	int s = JOptionPane.showConfirmDialog(MainFrame.getInstance(), text, Lang.getInstance().translate("Issue Asset"),  JOptionPane.YES_NO_OPTION);
 			
-			Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(MainFrame.getInstance(), true,text, (int) (th.getWidth()/1.2), (int) (th.getHeight()/1.2),Status_text);
+			Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(MainFrame.getInstance(), true,text, (int) (th.getWidth()/1.2), (int) (th.getHeight()/1.2),Status_text, Lang.getInstance().translate("Confirmation Transaction"));
 			dd.setLocationRelativeTo(th);
 			dd.setVisible(true);
 			

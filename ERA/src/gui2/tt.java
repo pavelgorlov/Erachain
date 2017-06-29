@@ -83,6 +83,8 @@ public tt() {
   // account_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Search Accounts")));
    //account_Node.add(new DefaultMutableTreeNode("Issue Account"));
    
+   
+   document_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Favorite Documents")));
    document_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("My Documents")));
    document_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Search Documents")));
    document_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Issue Document")));
@@ -91,6 +93,7 @@ public tt() {
    mails_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Outcoming Mails")));
    mails_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Send Mail")));
    
+   assets_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Favorite Assets")));
    assets_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("My Assets")));
    assets_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Search Assets")));
    assets_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Issue Asset")));
@@ -106,7 +109,7 @@ public tt() {
    
    statuses_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("My Statuses")));
    statuses_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Search Statuses")));
-   statuses_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Issue Status")));
+   statuses_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Create Status")));
    
    unions_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("My Unions")));
    unions_Node.add(new DefaultMutableTreeNode(Lang.getInstance().translate("Search Unions")));

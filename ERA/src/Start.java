@@ -1,5 +1,7 @@
+import gui.AboutFrame;
 import gui.Gui;
 import gui.create.License_JFrame;
+import gui.library.Issue_Confirm_Dialog;
 
 // 30/03
 import java.io.File;
@@ -26,11 +28,16 @@ import utils.SysTray;
 
 public class Start {
 	
+	
 	static Logger LOGGER = Logger.getLogger(Start.class.getName());
+	private static AboutFrame about_frame;
+	private static String info;
 
 	public static void main(String args[]) throws IOException
 	{	
 		
+		about_frame = AboutFrame.getInstance();
+		about_frame.setUserClose(false);
 		////
 		File log4j = new File("log4j.properties");
 		if(log4j.exists())
@@ -98,11 +105,13 @@ public class Start {
 					throw new Exception(Lang.getInstance().translate("Both gui and rpc cannot be disabled!"));
 				}
 				
-				LOGGER.info(Lang.getInstance().translate("Starting %app% / version: %version% / build date: %builddate% / ...")
+				info = Lang.getInstance().translate("Starting %app% / version: %version% / build date: %builddate% / ...")
 						.replace("%app%", Lang.getInstance().translate(controller.Controller.APP_NAME))
 						.replace("%version%", Controller.getVersion())
-						.replace("%builddate%", Controller.getBuildDateString())
+						.replace("%builddate%", Controller.getBuildDateString());
+				LOGGER.info(info
 						);
+				about_frame.set_console_Text(info);
 				
 				//STARTING NETWORK/BLOCKCHAIN/RPC
 				Controller.getInstance().start();
@@ -116,10 +125,12 @@ public class Start {
 						Thread.sleep(100);
 
 					//START GUI
+						
 						if(Gui.getInstance() != null && Settings.getInstance().isSysTrayEnabled())
 						{					
 							SysTray.getInstance().createTrayIcon();
-
+							about_frame.setVisible(false);
+							about_frame.getInstance().dispose();
 							//Controller.getInstance().setWalletLicense(0); // TEST
 							if (Controller.getInstance().doesWalletExists() &&
 									Controller.LICENSE_KEY > Controller.getInstance().getWalletLicense()) {
@@ -135,6 +146,8 @@ public class Start {
 							}
 						}
 					} catch(Exception e1) {
+						about_frame.setVisible(false);
+						about_frame.dispose();
 						LOGGER.error(Lang.getInstance().translate("GUI ERROR - at Start") ,e1);
 					}
 				}
@@ -145,6 +158,14 @@ public class Start {
 			} catch(Exception e) {
 				
 				LOGGER.error(e.getMessage(),e);
+			// show error dialog	
+				if (Settings.getInstance().isGuiEnabled()){
+				 Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(null, true, Lang.getInstance().translate("STARTUP ERROR") + ": " + e.getMessage() , 600, 400, Lang.getInstance().translate(" "));
+				 dd.jButton1.setVisible(false);
+				 dd.jButton2.setText(Lang.getInstance().translate("Cancel"));
+				 dd.setLocationRelativeTo(null);
+				 dd.setVisible(true);
+				}
 				
 				//USE SYSTEM STYLE
 		        try {
@@ -161,7 +182,10 @@ public class Start {
 					JOptionPane.showMessageDialog(null, e.getMessage(), Lang.getInstance().translate("Startup Error"), JOptionPane.ERROR_MESSAGE);
 				}
 				
-				//FORCE SHUTDOWN
+				
+				about_frame.setVisible(false);
+				about_frame.dispose();
+				 //FORCE SHUTDOWN
 				System.exit(0);
 			}
 		}
@@ -178,6 +202,9 @@ public class Start {
 				
 				if(command.equals("quit"))
 				{
+
+					about_frame.setVisible(false);
+					about_frame.dispose();
 					scanner.close();
 					System.exit(0);
 				}

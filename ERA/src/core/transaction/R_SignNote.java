@@ -31,6 +31,7 @@ import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 
+import controller.Controller;
 import core.BlockChain;
 import core.account.Account;
 import core.account.PublicKeyAccount;
@@ -38,6 +39,7 @@ import core.crypto.Base58;
 import core.item.ItemCls;
 //import database.BalanceMap;
 import database.DBSet;
+import database.wallet.FavoriteDocument;
 
 
 
@@ -638,10 +640,10 @@ public class R_SignNote extends Transaction {
 	public static  byte[]  Json_Files_to_Byte_V2(String title, JSONObject json, HashMap<String,Tuple2<Boolean,byte[]>> files) throws Exception {
 	
 		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-		outStream.write("v 2.00".getBytes()); // only 6 simbols!!!
-		byte[] title_Bytes = "".getBytes();
+		outStream.write("v 2.00".getBytes(Charset.forName("UTF-8"))); // only 6 simbols!!!
+		byte[] title_Bytes = "".getBytes(Charset.forName("UTF-8"));
 		if (title !=null){
-			title_Bytes = title.getBytes();
+			title_Bytes = title.getBytes(Charset.forName("UTF-8"));
 		}
 		
 		
@@ -656,7 +658,7 @@ public class R_SignNote extends Transaction {
 		byte[] size_Json;
 		
 		if (files == null || files.size() == 0){
-			JSON_Bytes = json.toString().getBytes();
+			JSON_Bytes = json.toString().getBytes(Charset.forName("UTF-8"));
 			// convert int to byte
 			size_Json = ByteBuffer.allocate(Transaction.DATA_JSON_PART_LENGTH).putInt( JSON_Bytes.length).array();
 			outStream.write(size_Json);
@@ -677,9 +679,9 @@ public class R_SignNote extends Transaction {
 			files_Json.put(i+"", file_Json);
 			out_files.add(i,file.getValue().b);
 			i++;
-		}
+		} 
 		json.put("F",files_Json);
-		JSON_Bytes = json.toString().getBytes();
+		JSON_Bytes = json.toString().getBytes(Charset.forName("UTF-8"));
 		// convert int to byte
 		size_Json = ByteBuffer.allocate(Transaction.DATA_JSON_PART_LENGTH).putInt( JSON_Bytes.length).array();
 		outStream.write(size_Json);
@@ -689,6 +691,13 @@ public class R_SignNote extends Transaction {
 		}
 		return outStream.toByteArray();
 
+	}
+	public boolean isFavorite(){
+			
+		return Controller.getInstance().wallet.database.getDocumentFavoritesSet().contains(this);
+		
+		
+		
 	}
 	
 

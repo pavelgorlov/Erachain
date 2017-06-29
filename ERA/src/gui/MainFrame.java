@@ -9,6 +9,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -99,7 +100,7 @@ public void initComponents() {
 		java.awt.GridBagConstraints gridBagConstraints;
 
 		jTabbedPane1 = new javax.swing.JTabbedPane();
-		mainPanel = new Main_Panel();
+		mainPanel = Main_Panel.getInstance();
 		//statusPanel = new StatusPanel();
 		jMenuBar1 = new javax.swing.JMenuBar();
 		jMenu1 = new Menu_Files();
@@ -224,7 +225,7 @@ public void initComponents() {
 				settingsJSON.put("Main_Frame_Selected_Tab", mainPanel.jTabbedPane1.getSelectedIndex()+ "");
 				
 				settingsJSONbuf.put("Main_Frame_Setting", settingsJSON);
-				settingsJSONbuf.put("FileChooser_Path", My_JFileChooser.get_Default_Path());
+				settingsJSONbuf.put("FileChooser_Path", new String(My_JFileChooser.get_Default_Path().getBytes(Charset.forName("UTF-8"))));
 				settingsJSONbuf.put("FileChooser_Wight", My_JFileChooser.get_Default_Width());
 				settingsJSONbuf.put("FileChooser_Height", My_JFileChooser.get_Default_Height());
 				
@@ -260,7 +261,7 @@ public void initComponents() {
 			}
 
 			@Override
-			public void windowOpened(WindowEvent arg0) {
+			public void windowOpened(WindowEvent arg0) { 
 				// TODO Auto-generated method stub
 			}
 
@@ -268,39 +269,47 @@ public void initComponents() {
 
 		pack();
 		// set perameters size $ split panel
-		
+		int devLastLoc = 250;
+		int devLoc = 250;
+		int x =0;
+		int y =0;
+		Toolkit kit = Toolkit.getDefaultToolkit();
+        Dimension screens = kit.getScreenSize();
+		int h = screens.height-50;
+		int w = screens.width-50;
+		int orientation=1;
 
 		if (settingsJSONbuf.containsKey("Main_Frame_Setting")) {
 			main_Frame_settingsJSON = new JSONObject();
 			main_Frame_settingsJSON = (JSONObject) settingsJSONbuf.get("Main_Frame_Setting");
-			int x =0;
-			int y =0;
+			
 			if( main_Frame_settingsJSON.containsKey("Main_Frame_Loc_X")) x = new Integer((String) main_Frame_settingsJSON.get("Main_Frame_Loc_X")); // x
 			if( main_Frame_settingsJSON.containsKey("Main_Frame_Loc_Y")) y = new Integer((String) main_Frame_settingsJSON.get("Main_Frame_Loc_Y")); // y
-			setLocation(x, y);
-			Toolkit kit = Toolkit.getDefaultToolkit();
-	        Dimension screens = kit.getScreenSize();
-			int h = screens.height;
-			int w = screens.width;
+			
+			
 			if( main_Frame_settingsJSON.containsKey("Main_Frame_Height")) h = new Integer((String) main_Frame_settingsJSON.get("Main_Frame_Height")); // высота
 			if( main_Frame_settingsJSON.containsKey("Main_Frame_Width")) w = new Integer((String) main_Frame_settingsJSON.get("Main_Frame_Width")); // длина
+			
+			
+			setLocation(x, y);
 			setSize(w, h);
+			
+			
+			
 			if(main_Frame_settingsJSON.containsKey("Main_Frame_is_Max")){
 				Boolean bb = new Boolean((String)main_Frame_settingsJSON.get("Main_Frame_is_Max"));
-				if (bb)this.setExtendedState(MAXIMIZED_BOTH);
-				
+				if (bb){
+					this.setExtendedState(MAXIMIZED_BOTH);
+				}
 			}
-			int orientation=0;
+			
 			if( main_Frame_settingsJSON.containsKey("Main_Frame_Div_Orientation")) orientation = new Integer((String) main_Frame_settingsJSON.get("Main_Frame_Div_Orientation"));
-			mainPanel.jSplitPane1.setOrientation(orientation);
-			int devLoc = 250;
+			
+			
 			if( main_Frame_settingsJSON.containsKey("Main_Frame_Div_Loc")) devLoc = new Integer((String) main_Frame_settingsJSON.get("Main_Frame_Div_Loc"));
-			int devLastLoc = 250;
+			
 			if( main_Frame_settingsJSON.containsKey("Main_Frame_Div_Last_Loc")) devLastLoc = new Integer((String) main_Frame_settingsJSON.get("Main_Frame_Div_Last_Loc"));
-			mainPanel.jSplitPane1.setLastDividerLocation(devLastLoc);
-			mainPanel.jSplitPane1.setDividerLocation(devLoc);
-			mainPanel.jSplitPane1.set_button_title(); // set title diveders
-														// buttons
+			
 
 			// load tabs
 			if (main_Frame_settingsJSON.containsKey("OpenTabbeds")) {
@@ -320,13 +329,19 @@ public void initComponents() {
 			}
 		
 		
-		} else {
-			setExtendedState(MAXIMIZED_BOTH);
+		} 
+		//else {
+	//		setExtendedState(MAXIMIZED_BOTH);
 			// mainPanel.jSplitPane1.setDividerLocation(250);
-			mainPanel.jSplitPane1.setLastDividerLocation(300);
+	//		mainPanel.jSplitPane1.setLastDividerLocation(300);
 
-		}
-		
+	//	}
+	
+		mainPanel.jSplitPane1.setOrientation(orientation);
+		mainPanel.jSplitPane1.setLastDividerLocation(devLastLoc);
+		mainPanel.jSplitPane1.setDividerLocation(devLoc);
+		mainPanel.jSplitPane1.set_button_title(); // set title diveders
+													// buttons
 		
 
 	}// </editor-fold>

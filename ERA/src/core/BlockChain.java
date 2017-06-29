@@ -25,15 +25,17 @@ public class BlockChain
 
 	//public static final int START_LEVEL = 1;
 	public static final boolean DEVELOP_USE = true;
-		
+
 	public static final int TESTNET_PORT = DEVELOP_USE?9065:9045;
 	public static final int MAINNET_PORT = DEVELOP_USE?9066:9046;
-	public static final int DEFAULT_WEB_PORT = DEVELOP_USE?9067:9047;
+	public
+	static final int DEFAULT_WEB_PORT = DEVELOP_USE?9067:9047;
 	public static final int DEFAULT_RPC_PORT = DEVELOP_USE?9068:9048;
 
 	//public static final String TIME_ZONE = "GMT+3";
 	//
-	public static final int MAX_ORPHAN = 30; // max orphan blocks in chain
+	public static final int MAX_ORPHAN = 10000; // max orphan blocks in chain
+	public static final int SYNCHRONIZE_PACKET = 100; // when synchronize - get blocks packet
 	public static final int TARGET_COUNT = 100;
 	public static final int BASE_TARGET = 1024 * 3;
 	public static final int REPEAT_WIN = DEVELOP_USE?5:40; // GENESIS START TOP ACCOUNTS
@@ -239,7 +241,9 @@ public class BlockChain
 
 	public int getCheckPoint(DBSet dbSet) {
 		
-		int checkPoint = getHeight(dbSet) - BlockChain.MAX_ORPHAN; 
+		int checkPoint = getHeight(dbSet) - BlockChain.MAX_ORPHAN;
+		checkPoint = 32400;
+		
 		if ( checkPoint > this.checkPoint)
 			this.checkPoint = checkPoint;
 		
@@ -272,7 +276,8 @@ public class BlockChain
 			Block childBlock = dbSet.getBlockMap().get(parent).getChild(dbSet);
 			
 			int counter = 0;
-			while(childBlock != null && counter < MAX_ORPHAN)
+			//while(childBlock != null && counter < MAX_ORPHAN)
+			while(childBlock != null && counter < SYNCHRONIZE_PACKET)
 			{
 				headers.add(childBlock.getSignature());
 				
@@ -529,8 +534,10 @@ public class BlockChain
 			base = (BlockChain.BASE_TARGET>>1) + (BlockChain.BASE_TARGET>>2);
 		else if ( height < BlockChain.TARGET_COUNT <<5)
 			base = (BlockChain.BASE_TARGET>>1) + (BlockChain.BASE_TARGET>>3);
-		else
+		else if ( height < 32100)
 			base = (BlockChain.BASE_TARGET>>1) + (BlockChain.BASE_TARGET>>4);
+		else
+			base = (BlockChain.BASE_TARGET>>1) + (BlockChain.BASE_TARGET>>3);
 
 		return base;
 

@@ -34,6 +34,8 @@ public class Synchronizer
 	private static final byte[] PEER_TEST = new byte[]{(byte)185, (byte)146, (byte)168, (byte)226};
 	
 	private boolean run = true;
+	private Peer fromPeer;
+	
 	
 	public Synchronizer()
 	{
@@ -41,6 +43,11 @@ public class Synchronizer
 	}
 	
 	static boolean USE_AT_ORPHAN = false;
+	static int BAN_BLOCK_TIMES = BlockChain.GENERATING_MIN_BLOCK_TIME / 60 * 30;
+	
+	public Peer getPeer() {
+		return fromPeer;
+	}
 	
 	private void checkNewBlocks(DBSet fork, Block lastCommonBlock, List<Block> newBlocks, Peer peer) throws Exception
 	{
@@ -69,8 +76,9 @@ public class Synchronizer
 			
 			int lastHeight = lastBlock.getHeight(fork);
 			LOGGER.debug("*** core.Synchronizer.checkNewBlocks - lastBlock["
-					+ lastHeight + "]"
-					+ " search common block in FORK"
+					+ lastHeight + "]\n"
+					+ "newBlocks.size = " + newBlocks.size()
+					+ "\n search common block in FORK"
 					+ " in mainDB: " + lastBlock.getHeight(fork.getParent()));
 
 			//ORPHAN LAST BLOCK UNTIL WE HAVE REACHED COMMON BLOCK
@@ -82,7 +90,7 @@ public class Synchronizer
 
 					String mess = "Dishonest peer by not valid lastCommonBlock["
 							+ lastCommonBlock.getHeight(fork) + "]";
-					peer.ban(5 * BlockChain.GENERATING_MIN_BLOCK_TIME / 60, mess);
+					peer.ban(BAN_BLOCK_TIMES>>2, mess);
 					throw new Exception(mess);
 				}
 				lastBlock.orphan(fork);
@@ -137,14 +145,12 @@ public class Synchronizer
 			{
 				AT_API_Platform_Impl.getInstance().setDBSet( fork.getParent() );
 
-				//cnt.closePeerOnError(peer, "Dishonest peer by not valid block.heigh: " + heigh); // icreator
-
 				block.isValid(fork);
 				block.isSignatureValid();
 				
 				//INVALID BLOCK THROW EXCEPTION
 				String mess = "Dishonest peer by not is Valid block, heigh: " + heigh;
-				peer.ban(2 * BlockChain.GENERATING_MIN_BLOCK_TIME / 60, mess);
+				peer.ban(BAN_BLOCK_TIMES, mess);
 				throw new Exception(mess);
 			}
 		}
@@ -225,14 +231,19 @@ public class Synchronizer
 	public void synchronize(DBSet dbSet, int checkPointHeight, Peer peer) throws Exception
 	{
 
-		if (!this.run)
+		if (!this.run) {
+			fromPeer = null;
 			return;
+		}
+
 
 		/*
 		LOGGER.error("Synchronizing from peer: " + peer.toString() + ":"
 					+ peer.getAddress().getHostAddress() + " - " + peer.getPing());
 					*/
 
+		fromPeer = peer;
+		
 		byte[] lastBlockSignature = dbSet.getBlockMap().getLastBlockSignature();
 				
 		// FIND HEADERS for common CHAIN
@@ -243,7 +254,7 @@ public class Synchronizer
 		Tuple2<byte[], List<byte[]>> signatures = this.findHeaders(peer, lastBlockSignature, checkPointHeight);
 		if (signatures.b.size() == 0) {
 			//String mess = "Dishonest peer - signatures == []: " + peer.getAddress().getHostAddress();
-			//peer.ban(2 * BlockChain.GENERATING_MIN_BLOCK_TIME / 60, mess);
+			//peer.ban(BAN_BLOCK_TIMES, mess);
 			//throw new Exception(mess);
 			//return;
 		}
@@ -252,8 +263,10 @@ public class Synchronizer
 		Block common = dbSet.getBlockMap().get(signatures.a);
 		int commonBlockHeight = common.getHeight(dbSet);
 
-		if (!this.run || dbSet.isStoped())
+		if (!this.run || dbSet.isStoped()) {
+			fromPeer = null;
 			return;
+		}
 
 		LOGGER.info("Synchronizing from COMMON blockHeight " + commonBlockHeight);
 		
@@ -277,10 +290,16 @@ public class Synchronizer
 			//GET AND PROCESS BLOCK BY BLOCK
 			for(byte[] signature: signatures.b)
 			{
+				if (!this.run) {
+					fromPeer = null;
+					return;
+				}
+				
 				//GET BLOCK
 				Block blockFromPeer = blockBuffer.getBlock(signature);
 				
 				if (!this.run) {
+					fromPeer = null;
 					return;
 				}
 				
@@ -288,20 +307,27 @@ public class Synchronizer
 					
 					//INVALID BLOCK THROW EXCEPTION
 					String mess = "Dishonest peer on block null";
-					peer.ban(2 * BlockChain.GENERATING_MIN_BLOCK_TIME / 60, mess);
+					peer.ban(10, mess);
 					throw new Exception(mess);
 				}
 				blockFromPeer.setCalcGeneratingBalance(dbSet); // NEED SET it
+
+				if (!this.run) {
+					fromPeer = null;
+					return;
+				}
 				
 				//PROCESS BLOCK
 				if(!this.process(dbSet, blockFromPeer))
 				{
-					if (!this.run)
+					if (!this.run) {
+						fromPeer = null;
 						return;
+					}
 
 					//INVALID BLOCK THROW EXCEPTION
 					String mess = "Dishonest peer on block " + blockFromPeer.getHeight(dbSet);
-					peer.ban(10 * BlockChain.GENERATING_MIN_BLOCK_TIME / 60, mess);
+					peer.ban(BAN_BLOCK_TIMES, mess);
 					throw new Exception(mess);
 				}
 			}
@@ -316,6 +342,7 @@ public class Synchronizer
 			List<Block> blocks = this.getBlocks(dbSet, signatures.b, peer);
 
 			if (!this.run) {
+				fromPeer = null;
 				return;
 			}
 
@@ -325,6 +352,7 @@ public class Synchronizer
 			*/
 			List<Transaction> orphanedTransactions = this.synchronize(dbSet, common, blocks, peer);
 			if (!this.run) {
+				fromPeer = null;
 				return;
 			}
 
@@ -332,6 +360,7 @@ public class Synchronizer
 			for(Transaction transaction: orphanedTransactions)
 			{
 				if (!this.run) {
+					fromPeer = null;
 					return;
 				}
 
@@ -341,6 +370,8 @@ public class Synchronizer
 		}
 		
 		//dbSet.commitHard();
+		fromPeer = null;
+
 	}
 	
 	/*
@@ -428,7 +459,7 @@ public class Synchronizer
 			checkPointHeightCommonBlock = getBlock(checkPointHeightSignature, peer);
 		} catch (Exception e) {
 			String mess = "Dishonest peer - error in PEER: " + peer.getAddress().getHostAddress();
-			peer.ban(2 * BlockChain.GENERATING_MIN_BLOCK_TIME / 60, mess);
+			//// banned in getBlock -- peer.ban(BAN_BLOCK_TIMES>>3, mess);
 			throw new Exception(mess);
 		}
 
@@ -436,13 +467,13 @@ public class Synchronizer
 				|| checkPointHeightSignature == null) {
 			String mess = "Dishonest peer: my block[" + checkPointHeight
 					+ "\n -> common BLOCK not found";
-			peer.ban(10 * BlockChain.GENERATING_MIN_BLOCK_TIME / 60, mess);
+			peer.ban(BAN_BLOCK_TIMES, mess);
 
 			throw new Exception(mess);
 		}
 
 		//GET HEADERS UNTIL COMMON BLOCK IS FOUND OR ALL BLOCKS HAVE BEEN CHECKED
-		int steep = BlockChain.MAX_ORPHAN>>2;
+		int steep = BlockChain.SYNCHRONIZE_PACKET>>2;
 		byte[] lastBlockSignatureCommon;
 		do {
 			maxChainHeight -= steep;
@@ -470,7 +501,7 @@ public class Synchronizer
 		if (false && headers.isEmpty()) {
 			String mess = "Dishonest peer by headers.size==0 " + peer.getAddress().getHostAddress();
 			
-			peer.ban(0 * BlockChain.GENERATING_MIN_BLOCK_TIME / 60, mess);
+			peer.ban(BAN_BLOCK_TIMES, mess);
 			throw new Exception(mess);
 		}
 
@@ -565,6 +596,6 @@ public class Synchronizer
 	public void stop() {
 		
 		this.run = false;
-		//this.process(DBSet.getInstance(), null);
+		this.process(DBSet.getInstance(), null);
 	}
 }

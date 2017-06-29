@@ -40,6 +40,8 @@ import javax.swing.JTextField;
 import javax.swing.RowFilter;
 import javax.swing.RowSorter;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -74,15 +76,19 @@ import gui.models.Renderer_Right;
 import gui.models.WalletItemImprintsTableModel;
 import gui.records.VouchRecordDialog;
 import lang.Lang;
+import utils.MenuPopupUtil;
 
 public class Search_Assets_Tab extends Split_Panel {
 	private TableModelItemAssets tableModelItemAssets;
 	final MTable assetsTable;
 	private Search_Assets_Tab th;
 	Asset_Info info_panel;
+	protected int row;
+	private int selected_Item;
+	private JTextField key_Item;
 	
 	
-	public Search_Assets_Tab(){
+	public Search_Assets_Tab(boolean search_and_exchange){
 		super("Search_Assets_Tab");
 		th =this;
 		setName(Lang.getInstance().translate("Search Assets"));
@@ -90,6 +96,41 @@ public class Search_Assets_Tab extends Split_Panel {
 		// not show buttons
 			button1_ToolBar_LeftPanel.setVisible(false);
 			button2_ToolBar_LeftPanel.setVisible(false);
+			toolBar_LeftPanel.setVisible(true);
+			this.searchToolBar_LeftPanel.setVisible(true);
+			this.toolBar_LeftPanel.add(new JLabel(Lang.getInstance().translate("Find Key")+":"));
+	    	key_Item = new JTextField();
+	    	key_Item.setToolTipText("");
+	    	key_Item.setAlignmentX(1.0F);
+	    	key_Item.setMinimumSize(new java.awt.Dimension(100, 20));
+	    	key_Item.setName(""); // NOI18N
+	    	key_Item.setPreferredSize(new java.awt.Dimension(100, 20));
+	    	key_Item.setMaximumSize(new java.awt.Dimension(2000, 20));
+	       	
+	    	MenuPopupUtil.installContextMenu(key_Item);
+	    	
+	    	this.toolBar_LeftPanel.add(key_Item);
+	    	key_Item.addActionListener(new ActionListener(){
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					// TODO Auto-generated method stub
+					searchTextField_SearchToolBar_LeftPanel.setText("");
+					tableModelItemAssets.Find_item_from_key(key_Item.getText());	
+					if (tableModelItemAssets.getRowCount() < 1) return;
+					selected_Item = 0;
+					assetsTable.setRowSelectionInterval(selected_Item, selected_Item);
+					
+					
+				}
+	    		
+	    	});
+			
+			
+	    	searth_My_JCheckBox_LeftPanel.setVisible(false);
+			searth_Favorite_JCheckBox_LeftPanel.setVisible(false);	
+			
+			
 			jButton1_jToolBar_RightPanel.setVisible(true);
 			jButton1_jToolBar_RightPanel.setText(Lang.getInstance().translate("Print"));
 			jButton2_jToolBar_RightPanel.setVisible(true);
@@ -170,34 +211,8 @@ public class Search_Assets_Tab extends Split_Panel {
 //Sorter
 		RowSorter sorter =   new TableRowSorter(tableModelItemAssets);
 		assetsTable.setRowSorter(sorter);	
-	// UPDATE FILTER ON TEXT CHANGE
-		searchTextField_SearchToolBar_LeftPanel.getDocument().addDocumentListener(new DocumentListener() {
-			public void changedUpdate(DocumentEvent e) {
-				onChange();
-			}
-
-			public void removeUpdate(DocumentEvent e) {
-				onChange();
-			}
-
-			public void insertUpdate(DocumentEvent e) {
-				onChange();
-			}
-
-			public void onChange() {
-
-	// GET VALUE
-				String search = searchTextField_SearchToolBar_LeftPanel.getText();
-
-	// SET FILTER
-				tableModelItemAssets.fireTableDataChanged();
-				RowFilter filter = RowFilter.regexFilter(".*" + search + ".*", 1);
-				((DefaultRowSorter) sorter).setRowFilter(filter);
-				tableModelItemAssets.fireTableDataChanged();
-								
-			}
-		});
-				
+	
+					
 	// set showvideo			
 		jTable_jScrollPanel_LeftPanel.setModel(this.tableModelItemAssets);
 		jTable_jScrollPanel_LeftPanel = assetsTable;
@@ -208,9 +223,63 @@ public class Search_Assets_Tab extends Split_Panel {
 		
 		
 		
+		searchTextField_SearchToolBar_LeftPanel.addActionListener(new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				// TODO Auto-generated method stub
+				// GET VALUE
+					String search = searchTextField_SearchToolBar_LeftPanel.getText();
+					if (search.equals("")){jScrollPane_jPanel_RightPanel.setViewportView(null);
+					tableModelItemAssets.clear();
+					return;
+				}
+					key_Item.setText("");
+					tableModelItemAssets.set_Filter_By_Name(search);
+					if (tableModelItemAssets.getRowCount() < 1) return;
+					assetsTable.setRowSelectionInterval(0, 0);
+				
+			}
+		});
+		
+		
+		
 	
 	// MENU
 	JPopupMenu nameSalesMenu = new JPopupMenu();
+	
+	nameSalesMenu.addAncestorListener(new AncestorListener(){
+
+		
+
+		@Override
+		public void ancestorAdded(AncestorEvent arg0) {
+			// TODO Auto-generated method stub
+			row = assetsTable.getSelectedRow();
+			if (row < 1 ) {
+				nameSalesMenu.disable();
+		}
+		
+		row = assetsTable.convertRowIndexToModel(row);
+			
+			
+		}
+
+		@Override
+		public void ancestorMoved(AncestorEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void ancestorRemoved(AncestorEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		
+		
+	});
 	
 	JMenuItem favorite = new JMenuItem(Lang.getInstance().translate(""));
 	favorite.addActionListener(new ActionListener() {
@@ -225,9 +294,6 @@ public class Search_Assets_Tab extends Split_Panel {
 	JMenuItem sell = new JMenuItem(Lang.getInstance().translate("To sell"));
 	sell.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-			int row = assetsTable.getSelectedRow();
-			row = assetsTable.convertRowIndexToModel(row);
-
 			AssetCls asset = tableModelItemAssets.getAsset(row);
 		//	new AssetPairSelect(asset.getKey(), "To sell",  "");
 			new ExchangeFrame(asset,null,  "To sell", "");	
@@ -257,7 +323,7 @@ public class Search_Assets_Tab extends Split_Panel {
 		public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 			// TODO Auto-generated method stub
 			
-			int row = assetsTable.getSelectedRow();
+			row = assetsTable.getSelectedRow();
 			row = assetsTable.convertRowIndexToModel(row);
 			AssetCls asset = tableModelItemAssets.getAsset(row);
 			
@@ -313,29 +379,23 @@ public class Search_Assets_Tab extends Split_Panel {
 
 	
 	
-	nameSalesMenu.add(favorite);
+	
 	
 	
 	JMenuItem excahge = new JMenuItem(Lang.getInstance().translate("Exchange"));
 	excahge.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-			int row = assetsTable.getSelectedRow();
-			row = assetsTable.convertRowIndexToModel(row);
-
 			AssetCls asset = tableModelItemAssets.getAsset(row);
 		//	new AssetPairSelect(asset.getKey(), "","");
 			new ExchangeFrame(asset,null,  "", "");	
 		}
 	});
-	 nameSalesMenu.add(excahge);
+	
 	
 	
 	JMenuItem buy = new JMenuItem(Lang.getInstance().translate("Buy"));
 	buy.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-			int row = assetsTable.getSelectedRow();
-			row = assetsTable.convertRowIndexToModel(row);
-
 			AssetCls asset = tableModelItemAssets.getAsset(row);
 		//	new AssetPairSelect(asset.getKey(), "Buy","");
 			new ExchangeFrame(asset,null, "Buy", "");	
@@ -346,9 +406,6 @@ public class Search_Assets_Tab extends Split_Panel {
 	JMenuItem vouch_menu= new JMenuItem(Lang.getInstance().translate("Vouch"));
 	vouch_menu.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-			
-			int row = jTable_jScrollPanel_LeftPanel.getSelectedRow();
-			row = jTable_jScrollPanel_LeftPanel.convertRowIndexToModel(row);
 			AssetCls asset = tableModelItemAssets.getAsset(row);
 			
 			DBSet db = DBSet.getInstance();
@@ -361,8 +418,9 @@ public class Search_Assets_Tab extends Split_Panel {
 	});
 	
 	
-	
-	
+//	nameSalesMenu.add(favorite);
+	if (search_and_exchange){
+	 nameSalesMenu.add(excahge);
 	nameSalesMenu.addSeparator();
 	nameSalesMenu.add(buy);
 	
@@ -374,16 +432,21 @@ public class Search_Assets_Tab extends Split_Panel {
 	nameSalesMenu.addSeparator();
 	
 	nameSalesMenu.add(vouch_menu);
+	} else {
+		nameSalesMenu.add(favorite);
+	}
+	
+	
 	
 	assetsTable.setComponentPopupMenu(nameSalesMenu);
 	assetsTable.addMouseListener(new MouseAdapter() {
 		@Override
 		public void mousePressed(MouseEvent e) {
 			Point p = e.getPoint();
-			int row = assetsTable.rowAtPoint(p);
+			row = assetsTable.rowAtPoint(p);
 			assetsTable.setRowSelectionInterval(row, row);
 			
-			if(e.getClickCount() == 2)
+			if(e.getClickCount() == 2 && search_and_exchange)
 			{
 				row = assetsTable.convertRowIndexToModel(row);
 				AssetCls asset = tableModelItemAssets.getAsset(row);
@@ -434,8 +497,6 @@ public class Search_Assets_Tab extends Split_Panel {
 public void favorite_set(JTable assetsTable){
 
 
-int row = assetsTable.getSelectedRow();
-row = assetsTable.convertRowIndexToModel(row);
 
 AssetCls asset = tableModelItemAssets.getAsset(row);
 //new AssetPairSelect(asset.getKey());

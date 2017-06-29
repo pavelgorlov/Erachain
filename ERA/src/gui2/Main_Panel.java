@@ -28,8 +28,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import core.BlockChain;
+import gui.MainFrame;
 import gui.Wallets.Wallets_Manager_SplitPanel;
 import gui.items.accounts.My_Accounts_SplitPanel;
+import gui.items.assets.Assets_Favorite_SplitPanel;
 import gui.items.assets.IssueAssetPanel;
 import gui.items.assets.My_Assets_Tab;
 import gui.items.assets.My_Balance_Tab;
@@ -51,6 +53,7 @@ import gui.items.records.Records_My_SplitPanel;
 import gui.items.records.Records_Search_SplitPanel;
 import gui.items.records.Records_UnConfirmed_Panel;
 import gui.items.statement.Issue_Document_Panel;
+import gui.items.statement.Statements_Favorite_SplitPanel;
 import gui.items.statement.Statements_My_SplitPanel;
 import gui.items.statement.Statements_Search_SplitPanel;
 import gui.items.statuses.IssueStatusPanel;
@@ -78,12 +81,24 @@ import lang.Lang;
  */
 public class Main_Panel extends javax.swing.JPanel {
 
+	private static Main_Panel instance;
 	private MainLeftPanel mlp;
 
 	/**
 	 * Creates new form split_1
 	 */
-	public Main_Panel() {
+	
+	public static Main_Panel getInstance(){
+		if(instance == null)
+		{
+			instance = new Main_Panel();
+		}
+		
+		return instance;
+		
+	}
+	
+	private Main_Panel() {
 		initComponents();
 		jSplitPane1.M_setDividerSize(20);
 	}
@@ -316,6 +331,12 @@ public class Main_Panel extends javax.swing.JPanel {
 			return;
 
 		}
+		
+		
+		if ( str.equals( Lang.getInstance().translate("Favorite Documents"))  || str.equals("Statements_Favorite_SplitPanel")){
+			ccase1( Lang.getInstance().translate("Favorite Documents"), new Statements_Favorite_SplitPanel());
+			return;
+		}
 		if ( str.equals( Lang.getInstance().translate("My Documents"))  || str.equals("Statements_My_SplitPanel")){
 			ccase1( Lang.getInstance().translate("My Documents"), new Statements_My_SplitPanel());
 			return;
@@ -343,12 +364,19 @@ public class Main_Panel extends javax.swing.JPanel {
 			ccase1( Lang.getInstance().translate("Send Mail"), new Mail_Send_Panel(null,null,null,null));
 			return;
 		}
+		
+		if ( str.equals( Lang.getInstance().translate("Favorite Assets"))    || str.equals("Assets_Favorite_SplitPanel")){
+			ccase1( Lang.getInstance().translate("Favorite Assets"), new Assets_Favorite_SplitPanel());
+			return;
+		}
+		
+		
 		if ( str.equals( Lang.getInstance().translate("My Assets"))    || str.equals("My_Assets_Tab")){
 			ccase1( Lang.getInstance().translate("My Assets"), new My_Assets_Tab());
 			return;
 		}
 		if ( str.equals( Lang.getInstance().translate("Search Assets"))     || str.equals("Search_Assets_Tab")){
-			ccase1( Lang.getInstance().translate("Search Assets"), new Search_Assets_Tab());
+			ccase1( Lang.getInstance().translate("Search Assets"), new Search_Assets_Tab(true));
 			return;
 		}
 		if ( str.equals( Lang.getInstance().translate("My Balance")) || str.equals("My_Balance_Tab")){
@@ -375,8 +403,8 @@ public class Main_Panel extends javax.swing.JPanel {
 			ccase1( Lang.getInstance().translate("Issue Template"), new IssueNotePanel());
 			return;
 		}
-		if ( str.equals( Lang.getInstance().translate("Issue Status")) || str.equals("IssueStatusPanel") ){
-			ccase1( Lang.getInstance().translate("Issue Status"), new IssueStatusPanel());
+		if ( str.equals( Lang.getInstance().translate("Create Status")) || str.equals("IssueStatusPanel") ){
+			ccase1( Lang.getInstance().translate("Create Status"), new IssueStatusPanel());
 			return;
 		}
 		if ( str.equals( Lang.getInstance().translate("My Statuses"))  || str.equals("My_Statuses_Tab")){
@@ -412,7 +440,7 @@ public class Main_Panel extends javax.swing.JPanel {
 			return;
 		}
 		if ( str.equals( Lang.getInstance().translate("My Records"))    || str.equals("Records_My_SplitPanel")){
-			ccase1( Lang.getInstance().translate("My Records"), new Records_My_SplitPanel());
+			ccase1( Lang.getInstance().translate("My Records"), Records_My_SplitPanel.getInstance());
 			return;
 		}
 		if ( str.equals( Lang.getInstance().translate("Search Records"))   || str.equals("Records_Search_SplitPanel")){

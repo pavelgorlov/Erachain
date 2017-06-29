@@ -13,6 +13,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.UIManager;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 import javax.swing.table.TableColumn;
 
 import controller.Controller;
@@ -33,6 +35,7 @@ public class Accounts_Library_Panel extends JPanel {
 	private JScrollPane jScrollPane_Tab_Accounts;
 	private GridBagConstraints gridBagConstraints;
 	public PersonAccountsModel person_Accounts_Model;
+	protected int row;
 
 	public Accounts_Library_Panel(PersonCls person) {
 
@@ -41,7 +44,9 @@ public class Accounts_Library_Panel extends JPanel {
 		person_Accounts_Model = new PersonAccountsModel(person.getKey());
 		jTable_Accounts = new MTable(person_Accounts_Model);
 
-		
+	//	int row = jTable_Accounts.getSelectedRow();
+	//	row = jTable_Accounts.convertRowIndexToModel(row);
+	//	selected = person_Accounts_Model.getAccount(row);
 		
 		TableColumn to_Date_Column = jTable_Accounts.getColumnModel().getColumn(PersonAccountsModel.COLUMN_TO_DATE);
 		int rr = (int) (getFontMetrics( UIManager.getFont("Table.font")).stringWidth("0022-22-2222"));	
@@ -65,15 +70,48 @@ public class Accounts_Library_Panel extends JPanel {
 		this.add(jScrollPane_Tab_Accounts, gridBagConstraints);
 
 		JPopupMenu menu = new JPopupMenu();
+		menu.addAncestorListener(new AncestorListener(){
+
+			
+
+			@Override
+			public void ancestorAdded(AncestorEvent arg0) {
+				// TODO Auto-generated method stub
+				row = jTable_Accounts.getSelectedRow();
+				if (row < 1 ) {
+				menu.disable();
+			}
+			
+			row = jTable_Accounts.convertRowIndexToModel(row);
+				
+				
+			}
+
+			@Override
+			public void ancestorMoved(AncestorEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void ancestorRemoved(AncestorEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			
+			
+		});
+		
+		
 
 		JMenuItem copyAddress = new JMenuItem(Lang.getInstance().translate("Copy Account"));
 		copyAddress.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int row = jTable_Accounts.getSelectedRow();
-				row = jTable_Accounts.convertRowIndexToModel(row);
 
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-				StringSelection value = new StringSelection(person_Accounts_Model.getAccount_String(row));
+				Account account = person_Accounts_Model.getAccount(row);
+				StringSelection value = new StringSelection(account.getAddress());
 				clipboard.setContents(value, null);
 			}
 		});
@@ -83,13 +121,9 @@ public class Accounts_Library_Panel extends JPanel {
 		menu_copyPublicKey.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-				// StringSelection value = new
-				// StringSelection(person.getCreator().getAddress().toString());
-				int row = jTable_Accounts.getSelectedRow();
-				row = jTable_Accounts.convertRowIndexToModel(row);
 
-				byte[] publick_Key = Controller.getInstance()
-						.getPublicKeyByAddress(person_Accounts_Model.getAccount_String(row));
+				Account account = person_Accounts_Model.getAccount(row);
+				byte[] publick_Key = Controller.getInstance().getPublicKeyByAddress(account.getAddress());
 				PublicKeyAccount public_Account = new PublicKeyAccount(publick_Key);
 				StringSelection value = new StringSelection(public_Account.getBase58());
 				clipboard.setContents(value, null);
@@ -101,12 +135,7 @@ public class Accounts_Library_Panel extends JPanel {
 		menu_copyName.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-				// StringSelection value = new
-				// StringSelection(person.getCreator().getAddress().toString());
-				int row = jTable_Accounts.getSelectedRow();
-				row = jTable_Accounts.convertRowIndexToModel(row);
-
-	
+					
 				@SuppressWarnings("static-access")
 				StringSelection value = new StringSelection((String) person_Accounts_Model.getValueAt(row, person_Accounts_Model.COLUMN_CREATOR_NAME));
 				clipboard.setContents(value, null);
@@ -114,16 +143,10 @@ public class Accounts_Library_Panel extends JPanel {
 			}
 		});
 		menu.add(menu_copyName);
-
-		
-		
 		
 		JMenuItem copy_Creator_Address = new JMenuItem(Lang.getInstance().translate("Copy Creator Account"));
 		copy_Creator_Address.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int row = jTable_Accounts.getSelectedRow();
-				row = jTable_Accounts.convertRowIndexToModel(row);
-
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 				StringSelection value = new StringSelection(person_Accounts_Model.get_Creator_Account(row));
 				clipboard.setContents(value, null);
@@ -135,11 +158,6 @@ public class Accounts_Library_Panel extends JPanel {
 		menu_copy_Creator_PublicKey.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-				// StringSelection value = new
-				// StringSelection(person.getCreator().getAddress().toString());
-				int row = jTable_Accounts.getSelectedRow();
-				row = jTable_Accounts.convertRowIndexToModel(row);
-
 				byte[] publick_Key = Controller.getInstance()
 						.getPublicKeyByAddress(person_Accounts_Model.get_Creator_Account(row));
 				PublicKeyAccount public_Account = new PublicKeyAccount(publick_Key);
@@ -153,12 +171,6 @@ public class Accounts_Library_Panel extends JPanel {
 		menu_copy_Block_PublicKey.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-				// StringSelection value = new
-				// StringSelection(person.getCreator().getAddress().toString());
-				int row = jTable_Accounts.getSelectedRow();
-				row = jTable_Accounts.convertRowIndexToModel(row);
-
-				
 				StringSelection value = new StringSelection(person_Accounts_Model.get_No_Trancaction(row));
 				clipboard.setContents(value, null);
 			}
@@ -170,11 +182,7 @@ public class Accounts_Library_Panel extends JPanel {
 		JMenuItem Send_Coins_item_Menu = new JMenuItem(Lang.getInstance().translate("Send Asset"));
 		Send_Coins_item_Menu.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
-				int row = jTable_Accounts.getSelectedRow();
-				row = jTable_Accounts.convertRowIndexToModel(row);
 				Account account = person_Accounts_Model.getAccount(row);
-
 				new Account_Send_Dialog(null, null, account, null);
 
 			}
@@ -184,9 +192,6 @@ public class Accounts_Library_Panel extends JPanel {
 		JMenuItem Send_Mail_item_Menu = new JMenuItem(Lang.getInstance().translate("Send Mail"));
 		Send_Mail_item_Menu.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
-				int row = jTable_Accounts.getSelectedRow();
-				row = jTable_Accounts.convertRowIndexToModel(row);
 				Account account = person_Accounts_Model.getAccount(row);
 
 				new Mail_Send_Dialog(null, null, account, null);
@@ -209,9 +214,7 @@ public class Accounts_Library_Panel extends JPanel {
 	public void delay_on_close(){
 		
 		person_Accounts_Model.removeObservers();
-		
-		
-		
+
 	}
 
 }

@@ -1,6 +1,7 @@
 package core.blockexplorer;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 // 30/03 ++ asset - Trans_Amount
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -44,6 +45,7 @@ import core.block.Block;
 import core.block.GenesisBlock;
 import core.crypto.Base58;
 import core.crypto.Crypto;
+import core.exdata.ExData;
 import core.item.ItemCls;
 import core.item.assets.AssetCls;
 import core.item.assets.Order;
@@ -212,20 +214,21 @@ public class BlockExplorer
 
 			if(info.getQueryParameters().containsKey("assets"))
 			{
+				
 				output.put("lastBlock", jsonQueryLastBlock());
-
-				output.put("assets", jsonQueryAssets());
-				output.put("label_Title",  Lang.getInstance().translate_from_langObj("Assets",langObj));
-				output.put("label_table_key", Lang.getInstance().translate_from_langObj("Key",langObj));
-				output.put("label_table_asset_name", Lang.getInstance().translate_from_langObj("Name",langObj));
-				output.put("label_table_asset_creator", Lang.getInstance().translate_from_langObj("Creator",langObj));
-				output.put("label_table_asset_movable", Lang.getInstance().translate_from_langObj("Movable",langObj));
-				output.put("label_table_asset_description", Lang.getInstance().translate_from_langObj("Description",langObj));
-				output.put("label_table_asset_divisible", Lang.getInstance().translate_from_langObj("Divisible",langObj));
-				output.put("label_table_asset_amount", Lang.getInstance().translate_from_langObj("Amount",langObj));
+				int start = 0;
+				if(info.getQueryParameters().containsKey("start"))
+				{
+					if (info.getQueryParameters().getFirst("start").matches("[0-9]*"))
+						start = Integer.valueOf((info.getQueryParameters().getFirst("start")));
+				}
+				
+				output.putAll(jsonQueryAssets(start));
 
 				output.put("queryTimeMs", stopwatchAll.elapsedTime());
 				return output;
+				
+				
 			}
 
 			if(info.getQueryParameters().containsKey("aTs"))
@@ -475,9 +478,9 @@ public class BlockExplorer
 			{
 				int start = -1;
 
-				if(info.getQueryParameters().containsKey("start"))
+				if(info.getQueryParameters().containsKey("startPerson"))
 				{
-					start = Integer.valueOf((info.getQueryParameters().getFirst("start")));
+					start = Integer.valueOf((info.getQueryParameters().getFirst("startPerson")));
 				}
 
 				output.put("lastBlock", jsonQueryLastBlock());
@@ -871,6 +874,81 @@ public class BlockExplorer
 		return output;
 	}
 
+	public Map jsonQueryAssets(int start)
+	{
+		Map output=new LinkedHashMap();
+
+		   
+		SortableList<Long, ItemCls> it = DBSet.getInstance().getItemAssetMap().getList();
+		
+	
+		 int view_Row = 21;
+		 int end = start + view_Row;
+		 if (end > it.size()) end = it.size();
+		
+		 output.put("start_row", start);
+		 int i ;
+		 Map assetsJSON=new LinkedHashMap();
+		 for (i=start ; i< end; i++){
+			 
+			  AssetCls asset = (AssetCls) it.get(i).getB();
+			 
+	//	 }
+	//	while (ItemCls item : items) {
+			
+	//		AssetCls asset = (AssetCls) item; 
+			
+			Map assetJSON=new LinkedHashMap();
+			
+			assetJSON.put("key", asset.getKey());
+			assetJSON.put("name", asset.getName());
+			assetJSON.put("description", Processor.process(asset.getDescription()));
+			assetJSON.put("owner", asset.getOwner().getAddress());
+			assetJSON.put("quantity", NumberAsString.getInstance().numberAsString( asset.getTotalQuantity()));
+			String a =  Lang.getInstance().translate_from_langObj("False",langObj);
+			if (asset.isDivisible()) a =  Lang.getInstance().translate_from_langObj("True",langObj);
+			assetJSON.put("isDivisible", a);
+			a =  Lang.getInstance().translate_from_langObj("False",langObj);
+			if (asset.isMovable()) a =  Lang.getInstance().translate_from_langObj("True",langObj);
+			assetJSON.put("isMovable", a);
+			
+			assetJSON.put("img", Base64.encodeBase64String(asset.getImage()));
+			assetJSON.put("icon", Base64.encodeBase64String(asset.getIcon()));
+			List<Order> orders = DBSet.getInstance().getOrderMap().getOrders(asset.getKey());
+			List<Trade> trades = DBSet.getInstance().getTradeMap().getTrades(asset.getKey());
+
+			assetJSON.put("operations", orders.size() + trades.size());
+
+			assetsJSON.put(asset.getKey(), assetJSON);
+			
+			
+		}
+		 output.put("assets", assetsJSON);
+		 	output.put("maxHeight",it.size());
+			output.put("row", i);
+			output.put("view_Row", view_Row);
+			output.put("label_Title",  Lang.getInstance().translate_from_langObj("Assets",langObj));
+			output.put("label_table_key", Lang.getInstance().translate_from_langObj("Key",langObj));
+			output.put("label_table_asset_name", Lang.getInstance().translate_from_langObj("Name",langObj));
+			output.put("label_table_asset_creator", Lang.getInstance().translate_from_langObj("Creator",langObj));
+			output.put("label_table_asset_movable", Lang.getInstance().translate_from_langObj("Movable",langObj));
+			output.put("label_table_asset_description", Lang.getInstance().translate_from_langObj("Description",langObj));
+			output.put("label_table_asset_divisible", Lang.getInstance().translate_from_langObj("Divisible",langObj));
+			output.put("label_table_asset_amount", Lang.getInstance().translate_from_langObj("Amount",langObj));
+			output.put("Label_Later", Lang.getInstance().translate_from_langObj(">>",langObj));
+			output.put("Label_Previous", Lang.getInstance().translate_from_langObj("<<",langObj));
+			
+			
+
+			
+
+			
+			
+			
+		return output;
+	}
+	
+	
 
 	public Map jsonQueryATs()
 	{
@@ -1609,9 +1687,7 @@ if ( asset_1 == null) {
 	private Map jsonQueryPerson(String first) {
 		// TODO Auto-generated method stub
 		Map output=new LinkedHashMap();
-		WEB_TableModelPersons search_Table_Model = new WEB_TableModelPersons();
-		
-		PersonCls person = search_Table_Model.getPerson(new Integer(first)-1);
+		PersonCls person = (PersonCls) DBSet.getInstance().getItemPersonMap().get(new Long(first));
 		byte[] b = person.getImage();
 		String a = Base64.encodeBase64String(b);
 		
@@ -1785,10 +1861,10 @@ if ( asset_1 == null) {
 		}
 */
 		Map output=new LinkedHashMap();
-		WEB_TableModelPersons search_Table_Model = new WEB_TableModelPersons();
+		
 		
 
-		output.put("row", search_Table_Model.getRowCount());
+		
 
 		output.put("unconfirmedTxs", Controller.getInstance().getUnconfirmedTransactions().size());
 		
@@ -1797,6 +1873,10 @@ if ( asset_1 == null) {
 		output.put("Label_key", Lang.getInstance().translate_from_langObj("Key",langObj));
 		output.put("Label_name", Lang.getInstance().translate_from_langObj("Name",langObj));
 		output.put("Label_creator", Lang.getInstance().translate_from_langObj("Creator",langObj));
+		output.put("Label_Later", Lang.getInstance().translate_from_langObj(">>",langObj));
+		output.put("Label_Previous", Lang.getInstance().translate_from_langObj("<<",langObj));
+		
+		
 		
 	/*	
 		output.put("Label_Unconfirmed_transactions", "Unconfirmed transactions");
@@ -1814,13 +1894,19 @@ if ( asset_1 == null) {
 		int counter = start; 
  */
 		
+		int row = 0;
+		long k  = -1 ; 
+		int view_Row = 21;
 		
-		int k = search_Table_Model.getRowCount();
-		int i =0;
+		int i = start;
+		if (i <0)i =0;
+			k =  i + view_Row;
 		
+		if (k> DBSet.getInstance().getItemPersonMap().getSize()) k= DBSet.getInstance().getItemPersonMap().getSize();
+		output.put("start_row", i);
 		do{
 			
-			PersonCls person = search_Table_Model.getPerson(i);
+			PersonCls person = (PersonCls) DBSet.getInstance().getItemPersonMap().get((long) i+1);
 			
 			
 			
@@ -1873,10 +1959,17 @@ if ( asset_1 == null) {
 		*/	
 			output.put(i, blockJSON);
 			i++;
+			
 		}
 		while(i < k);
-
-
+		
+		output.put("maxHeight",DBSet.getInstance().getItemPersonMap().getSize());
+		output.put("row", i);
+		output.put("view_Row", view_Row);
+		
+		
+		
+		
 		return output;
 	}
 
@@ -3511,7 +3604,7 @@ if ( asset_1 == null) {
 				}
 				
 				String str_HTML = "";
-				if ( map_Data.b != null) str_HTML = "<b>"+Lang.getInstance().translate("Title") + ": </b>" +  map_Data.b +"<br>";
+				if ( map_Data.b != null) str_HTML = "<b>"+Lang.getInstance().translate_from_langObj("Title",langObj) + ": </b>" +  map_Data.b +"<br>";
 					
 				JSONObject jSON = map_Data.c;
 				// parse JSON
@@ -3579,9 +3672,15 @@ if ( asset_1 == null) {
 						 
 					}
 // Message v2.0
-					if (jSON.containsKey("Message")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj) + ": </b><br>"+ jSON.get("Message") +"<br>";
+					if (jSON.containsKey("Message")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj)
+							+ ": </b><br>"+ jSON.get("Message") +"<br>";
 	// v 2.1
-					if (jSON.containsKey("MS")) str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj) + ": </b><br>"+jSON.get("MS") +"<br>";
+					if (jSON.containsKey("MS")) {
+						String mess = (String)jSON.get("MS");
+						str_HTML += "<b>"+ Lang.getInstance().translate_from_langObj("Message", langObj)
+								+ ": </b><br>" + ExData.viewDescriptionHTML(mess) + "<br><br>";
+
+					}
 	// Hashes
 		// v2.0
 					if (jSON.containsKey("Hashes")){
@@ -3688,8 +3787,8 @@ if ( asset_1 == null) {
 				
 				
 				
-				//output.put("statement", library.to_HTML(str_HTML));	
-				output.put("statement", str_HTML);	
+				output.put("statement", library.to_HTML(str_HTML));	
+				//output.put("statement", str_HTML);	
 			}
 			
 			

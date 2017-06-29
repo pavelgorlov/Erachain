@@ -1,14 +1,8 @@
 package gui.transaction;
 
-import java.awt.datatransfer.StringSelection;
-import java.util.Date;
-
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-
-import controller.Controller;
-import core.account.PublicKeyAccount;
 import core.item.persons.PersonCls;
 import core.transaction.IssuePersonRecord;
 import lang.Lang;
@@ -59,6 +53,21 @@ public class IssuePersonDetailsFrame extends Rec_DetailsFrame
 		JTextField birtday = new JTextField(person.getBirthdayStr());
 		birtday.setEditable(false);
 		this.add(birtday, detailGBC);	
+		
+		//LABEL Death
+		if (person.getBirthday() < person.getDeathday()){
+		++labelGBC.gridy;
+				JLabel deadLabel = new JLabel(Lang.getInstance().translate("Deathday") + ":");
+				this.add(deadLabel, labelGBC);
+						
+				//Deathday
+				++detailGBC.gridy;
+				JTextField dead = new JTextField(person.getDeathdayStr());
+				dead.setEditable(false);
+				birtday.setEditable(false);
+				this.add(dead, detailGBC);	
+		}
+		
 		
 		//LABEL GENDER
 		++labelGBC.gridy;

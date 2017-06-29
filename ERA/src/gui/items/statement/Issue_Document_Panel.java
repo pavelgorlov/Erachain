@@ -796,7 +796,12 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 	@SuppressWarnings("null")
 	public Integer makeDeal(boolean asPack)
 	{
-		
+		// check title
+		if (jTextField_Title_Message.getText()==null || jTextField_Title_Message.getText().length() < 5){
+			JOptionPane.showMessageDialog(null, Lang.getInstance().translate("Invalid Title"), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
+			return null;
+			
+		}
 		//CHECK IF WALLET UNLOCKED
 		if(!Controller.getInstance().isWalletUnlocked())
 		{
@@ -843,8 +848,9 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 			feePow = Integer.parseInt(this.jTextField_Fee_Work.getText());		
 			Set<Entry<String, String>> param_keys = this.fill_Template_Panel.get_Params().entrySet();
 
-			if (this.fill_Template_Panel.sel_note !=null){
+			if (this.fill_Template_Panel.sel_note !=null && fill_Template_Panel.add_Tamplate.isSelected()){
 // template params
+				
 			out_Map.put("TM", fill_Template_Panel.sel_note.getKey()+"");
 			
 			for (Entry<String, String> key1:param_keys){
@@ -992,7 +998,11 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 		
 	//	int s = JOptionPane.showConfirmDialog(MainFrame.getInstance(), text, Lang.getInstance().translate("Issue Asset"),  JOptionPane.YES_NO_OPTION);
 		
-		Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(MainFrame.getInstance(), true,text, (int) (th.getWidth()/1.2), (int) (th.getHeight()/1.2),Status_text);
+		Issue_Confirm_Dialog dd = new Issue_Confirm_Dialog(MainFrame.getInstance(), true,text, (int) (th.getWidth()/1.2), (int) (th.getHeight()/1.2),Status_text, Lang.getInstance().translate("Confirmation Transaction") +" " + Lang.getInstance().translate("Issue Document"));
+	
+		Statement_Info ww = new Statement_Info(issueDoc);
+		ww.jPanel2.setVisible(false);
+		dd.jScrollPane1.setViewportView(ww);
 		dd.setLocationRelativeTo(th);
 		dd.setVisible(true);
 		
@@ -1005,7 +1015,7 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 		
 		
 		
-		}
+		
 		
 		
 		//CHECK VALIDATE MESSAGE
@@ -1015,9 +1025,9 @@ public class Issue_Document_Panel extends javax.swing.JPanel {
 			JOptionPane.showMessageDialog(new JFrame(), Lang.getInstance().translate(OnDealClick.resultMess(result)), Lang.getInstance().translate("Error"), JOptionPane.ERROR_MESSAGE);
 			return null;
 		}
+		}
 		
-		
-		
+		return null;
 	}
 
 	public void onSendClick()

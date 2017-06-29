@@ -33,7 +33,9 @@ public class BlocksTableModel extends TableModelCls<byte[], Block> implements Ob
 	private long winValue = 0l;
 	private boolean is_Select_Last_100_Block;
 	
-	private String[] columnNames = Lang.getInstance().translate(new String[]{"Height", "Timestamp", "Generator", "Generating Balance", "Transactions", "Fee"});
+	private String[] columnNames = Lang.getInstance().translate(new String[]{"Height", "Timestamp", "Generator",
+			"GB pH VW tVW", //"Generating Balance",
+			"Transactions", "Fee"});
 	private Boolean[] column_AutuHeight = new Boolean[]{false,true,true,false,true,false};
 	
 	static Logger LOGGER = Logger.getLogger(BlocksTableModel.class.getName());
@@ -153,7 +155,7 @@ public class BlocksTableModel extends TableModelCls<byte[], Block> implements Ob
 			return null;
 		
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage() + "\n block.size:" + blocks.size() +  " row:" + row, e);
+			LOGGER.error(e.getMessage() + "\n row:" + row, e);
 			return null;
 		}
 	}

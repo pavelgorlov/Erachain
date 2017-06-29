@@ -1003,6 +1003,8 @@ public class Block {
 		int repeat_win = 0;
 		if (height < BlockChain.REPEAT_WIN<<1) {
 			repeat_win = BlockChain.REPEAT_WIN;
+		}
+		else if (height > 32400) {
 		} else {
 			return 0;
 		}
@@ -1072,12 +1074,13 @@ public class Block {
 		int targetedWinValue = this.calcWinValueTargeted(db); 
 		if (!Controller.getInstance().isTestNet() && base > targetedWinValue) {
 			targetedWinValue = this.calcWinValueTargeted(db);
-			LOGGER.error("*** Block[" + height + "] targeted WIN_VALUE < 1/2 TARGET");
+			LOGGER.error("*** Block[" + height + "] targeted WIN_VALUE < MINIMAL TARGET " + targetedWinValue + " < " + base);
 			return false;
 		}
 		
 		// STOP IF SO RAPIDLY			
-		if (!Controller.getInstance().isTestNet() && isSoRapidly(height, this.getCreator(), Controller.getInstance().getBlockChain().getLastBlocksForTarget(db)) > 0) {
+		if (!Controller.getInstance().isTestNet() && isSoRapidly(height, this.getCreator(),
+				Controller.getInstance().getBlockChain().getLastBlocksForTarget(db)) > 0) {
 			LOGGER.error("*** Block[" + height + "] REPEATED WIN invalid");
 			return false;
 		}
@@ -1245,6 +1248,9 @@ public class Block {
 
 		//UPDATE GENERATOR BALANCE WITH FEE
 		//this.creator.setBalance(Transaction.FEE_KEY, this.creator.getBalance(dbSet, Transaction.FEE_KEY).add(blockFee), dbSet);
+		if (Controller.getInstance().isOnStopping())
+			return;
+		
 		this.creator.changeBalance(dbSet, false, Transaction.FEE_KEY, blockFee);
 
 		//ADD TO DB
